@@ -5,7 +5,6 @@
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
-#pragma alloc_text (PAGE, EchoEvtDeviceAdd)
 #endif
 
 NTSTATUS
@@ -22,7 +21,7 @@ DriverEntry(
     DECLARE_CONST_UNICODE_STRING(deviceName,
     L"\\Device\\" SNIFFER_DEVICE_NAME);
     DECLARE_CONST_UNICODE_STRING(dosDeviceName,
-    L"\\??\\" SNIFFER_DEVICE_NAME);
+    L"\\DosDevices\\" SNIFFER_DEVICE_NAME);
     WDF_OBJECT_ATTRIBUTES  attributes;
     WDF_FILEOBJECT_CONFIG fileObjectConfig;
     WDF_OBJECT_ATTRIBUTES objectAttributes;
@@ -35,7 +34,7 @@ DriverEntry(
     // configure for nonPnP
     WDF_DRIVER_CONFIG_INIT(&config, WDF_NO_EVENT_CALLBACK);
     config.DriverInitFlags |= WdfDriverInitNonPnpDriver;
-    //config.EvtDriverUnload = unload;
+    config.EvtDriverUnload = EvtWdfDriverUnload;
 
     status = WdfDriverCreate(DriverObject,
         RegistryPath,
@@ -55,20 +54,54 @@ DriverEntry(
         status = STATUS_INSUFFICIENT_RESOURCES;
         goto Cleanup;
     }
+    // Add NonPnpShutdown??? (1221)
 
-    WdfDeviceInitSetDeviceType(deviceInit, FILE_DEVICE_NETWORK);
+    status = CreateDevice(driver, deviceInit);
 
+Cleanup:
+
+    return status;
+}
+
+NTSTATUS
+CreateDevice(
+    IN WDFDRIVER Driver,
+    IN PWDFDEVICE_INIT DeviceInit
+)
+{
+    NTSTATUS status = STATUS_SUCCESS;
+
+    WDF_IO_TYPE_CONFIG ioConfig;
+    DECLARE_CONST_UNICODE_STRING(deviceName,
+    L"\\Device\\" SNIFFER_DEVICE_NAME);
+    DECLARE_CONST_UNICODE_STRING(dosDeviceName,
+    L"\\DosDevices\\" SNIFFER_DEVICE_NAME);
+    WDF_OBJECT_ATTRIBUTES  attributes;
+    WDF_FILEOBJECT_CONFIG fileObjectConfig;
+    WDF_OBJECT_ATTRIBUTES objectAttributes;
+    WDFDEVICE device;
+    WDF_IO_QUEUE_CONFIG queueConfig;
+    WDFQUEUE queue;
+
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: create device\n"));
+
+    UNREFERENCED_PARAMETER(Driver);
+
+    PAGED_CODE();
+
+    WdfDeviceInitSetDeviceType(DeviceInit, FILE_DEVICE_NETWORK);
+    WdfDeviceInitSetExclusive(DeviceInit, TRUE);
     WDF_IO_TYPE_CONFIG_INIT(&ioConfig);
     ioConfig.ReadWriteIoType = WdfDeviceIoDirect;
     // TODO: dont need it?
     //ioConfig.DeviceControlIoType = WdfDeviceIoDirect;
-    WdfDeviceInitSetIoTypeEx(deviceInit, &ioConfig);
+    WdfDeviceInitSetIoTypeEx(DeviceInit, &ioConfig);
 
-    status = WdfDeviceInitAssignName(deviceInit, &deviceName);
+    status = WdfDeviceInitAssignName(DeviceInit, &deviceName);
     if (!NT_SUCCESS(status)) {
 
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't assign device name\n"));
-        WdfDeviceInitFree(deviceInit);
+        WdfDeviceInitFree(DeviceInit);
         goto Cleanup;
     }
 
@@ -78,15 +111,15 @@ DriverEntry(
     objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
     objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
     objectAttributes.EvtDestroyCallback = SnifferEvtWdfObjectContextDestroy;
-    WdfDeviceInitSetFileObjectConfig(deviceInit, &fileObjectConfig, &objectAttributes);
-    // TODO 1042
-
+    WdfDeviceInitSetFileObjectConfig(DeviceInit, &fileObjectConfig, &objectAttributes);
+    WdfDeviceInitSetIoInCallerContextCallback(DeviceInit,
+        SnifferEvtWdfIoInCallerContext);
     WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
-    status = WdfDeviceCreate(&deviceInit, &objectAttributes, &device);
+    status = WdfDeviceCreate(&DeviceInit, &objectAttributes, &device);
     if (!NT_SUCCESS(status))
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't create device\n"));
-        WdfDeviceInitFree(deviceInit);
+        WdfDeviceInitFree(DeviceInit);
         goto Cleanup;
     }
 
@@ -122,5 +155,11 @@ Cleanup:
     }
 
     return status;
+}
+
+void EvtWdfDriverUnload(
+    WDFDRIVER Driver
+)
+{
 }
 
