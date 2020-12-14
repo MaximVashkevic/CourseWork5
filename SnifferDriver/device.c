@@ -86,6 +86,7 @@ void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
     // TODO free queue;
 }
 
+// TODO
 void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 {
     WDFREQUEST          request;
@@ -128,7 +129,7 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
         RemoveEntryList(pReceiveNetBufferListEntry);
         (objectContext->RecvNetBufListCount)--;
 
-        pNBL = 
+        //pNBL = 
     }
 }
 

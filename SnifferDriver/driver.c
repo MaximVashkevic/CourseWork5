@@ -7,6 +7,8 @@
 #pragma alloc_text (INIT, DriverEntry)
 #endif
 
+UINT32 CalloutId;
+
 NTSTATUS
 DriverEntry(
     _In_ PDRIVER_OBJECT     DriverObject,
@@ -58,9 +60,18 @@ DriverEntry(
 
     status = CreateDevice(driver, deviceInit);
 
+    status = InitializeWFP();
+
 Cleanup:
 
     return status;
+}
+
+NTSTATUS
+InitializeWFP(PDEVICE_OBJECT deviceObject)
+{
+    FWPS_CALLOUT   calloutInitData;
+    NTSTATUS status = FwpsCalloutRegister0(deviceObject, &calloutInitData )
 }
 
 NTSTATUS
@@ -82,6 +93,8 @@ CreateDevice(
     WDFDEVICE device;
     WDF_IO_QUEUE_CONFIG queueConfig;
     WDFQUEUE queue;
+    PDEVICE_OBJECT deviceObject;
+    FWPS_CALLOUT0 callout;
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: create device\n"));
 
@@ -152,6 +165,26 @@ CreateDevice(
     }
     WdfControlFinishInitializing(device);
 
+    // create callout
+    deviceObject = WdfDeviceWdmGetDeviceObject(device);
+    RtlZeroMemory(&callout, sizeof(callout));
+    callout.calloutKey = CALLOUT_GUID;
+    callout.classifyFn = ClassifyFn;
+    callout.notifyFn = NotifyFn;
+    callout.flowDeleteFn = NULL;
+
+    status = FwpsCalloutRegister0(
+        deviceObject,
+        &callout,
+        &CalloutId);
+
+    if (!NT_SUCCESS(status))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't create symlink\n"));
+        goto Cleanup;
+    }
+
+
 Cleanup:
     if (DeviceInit != NULL)
     {
@@ -167,3 +200,12 @@ void EvtWdfDriverUnload(
 {
 }
 
+VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues, IN OUT VOID* layerData, IN const FWPS_FILTER0* filter, IN UINT64 flowContext, IN OUT FWPS_CLASSIFY_OUT0* classifyOut)
+{
+    return VOID();
+}
+
+NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
+{
+    return STATUS_SUCCESS;
+}
