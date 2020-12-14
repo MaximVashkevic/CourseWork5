@@ -54,7 +54,7 @@ DriverEntry(
         status = STATUS_INSUFFICIENT_RESOURCES;
         goto Cleanup;
     }
-    // Add NonPnpShutdown??? (1221)
+    // Add NonPnpShutdown??? (1221) // нет в ndisprot
 
     status = CreateDevice(driver, deviceInit);
 
@@ -87,8 +87,6 @@ CreateDevice(
 
     UNREFERENCED_PARAMETER(Driver);
 
-    PAGED_CODE();
-
     WdfDeviceInitSetDeviceType(DeviceInit, FILE_DEVICE_NETWORK);
     WdfDeviceInitSetExclusive(DeviceInit, TRUE);
     WDF_IO_TYPE_CONFIG_INIT(&ioConfig);
@@ -106,14 +104,18 @@ CreateDevice(
     }
 
     // Initialize driver's framework file objects configuration
-    WDF_FILEOBJECT_CONFIG_INIT(&fileObjectConfig, SnifferEvtWdfDeviceFileCreate, SnifferEvtWdfFileClose, SnifferEvtWdfFileCleanup);
-    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&objectAttributes, DEVICE_CONTEXT);
-    objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
-    objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    objectAttributes.EvtDestroyCallback = SnifferEvtWdfObjectContextDestroy;
+    WDF_FILEOBJECT_CONFIG_INIT(
+        &fileObjectConfig, 
+        SnifferEvtWdfDeviceFileCreate, 
+        SnifferEvtWdfFileClose, 
+        SnifferEvtWdfFileCleanup);
+    WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&objectAttributes, FILE_OBJECT_CONTEXT);
+    //objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
+    //objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
+    //objectAttributes.EvtDestroyCallback = SnifferEvtWdfObjectContextDestroy;
     WdfDeviceInitSetFileObjectConfig(DeviceInit, &fileObjectConfig, &objectAttributes);
-    WdfDeviceInitSetIoInCallerContextCallback(DeviceInit,
-        SnifferEvtWdfIoInCallerContext);
+    //WdfDeviceInitSetIoInCallerContextCallback(DeviceInit,
+    //    SnifferEvtWdfIoInCallerContext);
     WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
     status = WdfDeviceCreate(&DeviceInit, &objectAttributes, &device);
     if (!NT_SUCCESS(status))
@@ -126,13 +128,15 @@ CreateDevice(
     // Create io queue
     WDF_IO_QUEUE_CONFIG_INIT_DEFAULT_QUEUE(&queueConfig,
         WdfIoQueueDispatchParallel);
-    queueConfig.EvtIoRead = NULL;
+    queueConfig.EvtIoRead = SnifferEvtWdfIoQueueIoRead;
     queueConfig.EvtIoWrite = NULL;
-    queueConfig.EvtIoDeviceControl = SnifferEvtWdfIoQueueIoDeviceControl;
-    WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
-    objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
-    objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-    status = WdfIoQueueCreate(device, &queueConfig, &objectAttributes, &queue);
+    queueConfig.EvtIoDeviceControl = NULL;
+    //queueConfig.EvtIoDeviceControl = SnifferEvtWdfIoQueueIoDeviceControl;
+    //WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
+    //objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
+    //objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
+    //status = WdfIoQueueCreate(device, &queueConfig, &objectAttributes, &queue);
+    status = WdfIoQueueCreate(device, &queueConfig, WDF_NO_OBJECT_ATTRIBUTES, &queue);
     if (!NT_SUCCESS(status))
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't create queue\n"));
@@ -149,9 +153,9 @@ CreateDevice(
     WdfControlFinishInitializing(device);
 
 Cleanup:
-    if (!NT_SUCCESS(status))
+    if (DeviceInit != NULL)
     {
-        // TODO
+        WdfDeviceInitFree(DeviceInit);
     }
 
     return status;
