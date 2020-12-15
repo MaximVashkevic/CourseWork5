@@ -4,27 +4,32 @@
 
 typedef struct _FILE_OBJECT_CONTEXT
 {
-    WDFQUEUE                ReadQueue;
-    ULONG                   PendedReadCount;
-    LIST_ENTRY              RecvNetBufListQueue;
-    ULONG                   RecvNetBufListCount;
+	WDFQUEUE                ReadQueue;
+	ULONG                   PendedReadCount;
+	LIST_ENTRY              RecvNetBufListQueue;
+	ULONG                   RecvNetBufListCount;
+	KSPIN_LOCK              lock;
+
+
 } FILE_OBJECT_CONTEXT, * P_FILE_OBJECT_CONTEXT;
 
 
 // generate function for access to device context
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(FILE_OBJECT_CONTEXT, GetFileObjectContext)
 
+// TODO: remove?
 typedef struct
 {
 	UINT64 address;       // buffer address
 	UINT64 length;        // buffer length
 } RECEIVE_IOCTL, * PRECEIVE_IOCTL;
 
-typedef struct
-{
-	UINT64* addr_len_ptr;                     // Pointer to address length.
-	UINT64 addr_len;
-};
+// TODO: remove?
+//typedef struct
+//{
+//	UINT64* addr_len_ptr;                     // Pointer to address length.
+//	UINT64 addr_len;
+//};
 
 
 
@@ -41,5 +46,21 @@ EVT_WDF_IO_QUEUE_IO_READ SnifferEvtWdfIoQueueIoRead;
 EVT_WDF_IO_QUEUE_IO_DEVICE_CONTROL SnifferEvtWdfIoQueueIoDeviceControl;
 EVT_WDF_IO_IN_CALLER_CONTEXT SnifferEvtWdfIoInCallerContext;
 
+// callout functions' prototypes
+VOID NTAPI
+ClassifyFn(
+	IN const FWPS_INCOMING_VALUES0* inFixedValues,
+	IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues,
+	IN OUT VOID* layerData,
+	IN const FWPS_FILTER0* filter,
+	IN UINT64  flowContext,
+	IN OUT FWPS_CLASSIFY_OUT0* classifyOut
+);
+
+void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext);
+
+extern WDFFILEOBJECT GlobalFileObject;
+
+// TODO: remove?
 #define IOCTL_SNIFFER_RECV                                                \
     CTL_CODE(FILE_DEVICE_NETWORK, 0x900, METHOD_OUT_DIRECT, FILE_READ_DATA)
