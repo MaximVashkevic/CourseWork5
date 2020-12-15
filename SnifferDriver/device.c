@@ -49,10 +49,7 @@ void SnifferEvtWdfDeviceFileCreate(
 
     InitializeListHead(&fileObjectContext->RecvNetBufListQueue);
 
-
-
-
-    // TODO start classify
+    // 
 Exit:
     WdfRequestComplete(Request, status);
 }
@@ -160,6 +157,7 @@ void SnifferEvtWdfIoQueueIoRead(
 
     if (!NT_SUCCESS(status))
     {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
         WdfRequestCompleteWithInformation(Request, status, 0);
     }
 

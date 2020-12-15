@@ -8,6 +8,8 @@
 #endif
 
 UINT32 CalloutId;
+WDFDEVICE device = NULL;
+
 
 NTSTATUS
 DriverEntry(
@@ -47,31 +49,24 @@ DriverEntry(
     if (!NT_SUCCESS(status))
     {
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't create driver\n"));
-        goto Cleanup;
+        goto Exit;
     }
 
     // Create control device
     deviceInit = WdfControlDeviceInitAllocate(driver, &SDDL_DEVOBJ_SYS_ALL_ADM_ALL);
     if (deviceInit == NULL) {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't allocate init structure\n"));
+
         status = STATUS_INSUFFICIENT_RESOURCES;
-        goto Cleanup;
+        goto Exit;
     }
     // Add NonPnpShutdown??? (1221) // нет в ndisprot
 
     status = CreateDevice(driver, deviceInit);
 
-    status = InitializeWFP();
-
-Cleanup:
+Exit:
 
     return status;
-}
-
-NTSTATUS
-InitializeWFP(PDEVICE_OBJECT deviceObject)
-{
-    FWPS_CALLOUT   calloutInitData;
-    NTSTATUS status = FwpsCalloutRegister0(deviceObject, &calloutInitData )
 }
 
 NTSTATUS
@@ -90,7 +85,6 @@ CreateDevice(
     WDF_OBJECT_ATTRIBUTES  attributes;
     WDF_FILEOBJECT_CONFIG fileObjectConfig;
     WDF_OBJECT_ATTRIBUTES objectAttributes;
-    WDFDEVICE device;
     WDF_IO_QUEUE_CONFIG queueConfig;
     WDFQUEUE queue;
     PDEVICE_OBJECT deviceObject;
@@ -180,7 +174,7 @@ CreateDevice(
 
     if (!NT_SUCCESS(status))
     {
-        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: can't create symlink\n"));
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't register Callout\n"));
         goto Cleanup;
     }
 
@@ -198,11 +192,21 @@ void EvtWdfDriverUnload(
     WDFDRIVER Driver
 )
 {
+    if (device != NULL)
+    {
+        WdfObjectDelete(device);
+    }
 }
 
 VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues, IN OUT VOID* layerData, IN const FWPS_FILTER0* filter, IN UINT64 flowContext, IN OUT FWPS_CLASSIFY_OUT0* classifyOut)
 {
-    return VOID();
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: classifyFn\n"));
+
+    PNET_BUFFER_LIST rawData;
+
+    rawData = (PNET_BUFFER_LIST)layerData;
+
+    classifyOut->actionType = FWP_ACTION_CONTINUE;
 }
 
 NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
