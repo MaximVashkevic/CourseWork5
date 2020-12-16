@@ -6,13 +6,17 @@
 
 int main()
 {
-    HANDLE handle = StartSniffing();
+	HANDLE handle = StartSniffing();
 
-    const size_t size = 100;
-    PUCHAR buffer = (UCHAR*)malloc(size);
-    std::cout << GetPacket(handle, buffer, size) << std::endl;
+	if (handle != 0)
+	{
 
-    StopSniffing(handle);
+		const size_t size = 100;
+		PUCHAR buffer = (UCHAR*)malloc(size);
+		std::cout << GetPacket(handle, buffer, size) << std::endl;
+
+		StopSniffing(handle);
+	}
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
