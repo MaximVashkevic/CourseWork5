@@ -10,7 +10,7 @@ int main()
 
 	if (handle != 0)
 	{
-
+		std::cin.get();
 		const size_t size = 100;
 		PUCHAR buffer = (UCHAR*)malloc(size);
 		std::cout << GetPacket(handle, buffer, size) << std::endl;

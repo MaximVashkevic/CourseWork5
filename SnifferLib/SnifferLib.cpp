@@ -187,35 +187,30 @@ HANDLE StartSniffing()
 		sublayer.displayData.name = SUBLAYER_NAME;
 
 		result = FwpmSubLayerAdd0(engineHandle, &sublayer, NULL);
-		if (result != ERROR_SUCCESS)
+		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 		{
-			if (result == FWP_E_ALREADY_EXISTS)
-			{
-				result = ERROR_SUCCESS;
-			}
-
 			break;
 		}
+
+		/*FWPM_CALLOUT0 callout;
+		ZeroMemory(&callout, sizeof(callout));
+		callout.calloutKey = CALLOUT_GUID;
+		callout.applicableLayer = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
+		callout.displayData.name = CALLOUT_NAME;*/
+		//callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
 
 		FWPM_CALLOUT0 callout;
 		ZeroMemory(&callout, sizeof(callout));
 		callout.calloutKey = CALLOUT_GUID;
-		callout.applicableLayer = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
+		callout.applicableLayer = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
 		callout.displayData.name = CALLOUT_NAME;
-		//callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
 
 		result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
-		if (result != ERROR_SUCCESS)
+		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 		{
-			if (result == FWP_E_ALREADY_EXISTS)
-			{
-				result = ERROR_SUCCESS;
-			}
-
 			break;
 		}
-
-		FWPM_FILTER0 filter;
+		/*FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
 
 		filter.layerKey = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
@@ -230,13 +225,37 @@ HANDLE StartSniffing()
 		filter.numFilterConditions = 1;
 		ZeroMemory(filterConditions, sizeof(filterConditions));
 		filterConditions[0].fieldKey = FWPM_CONDITION_L2_FLAGS;
-		filterConditions[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
+		filterConditions[0].matchType = FWP_MATCH_FLAGS_ANY_SET;
 		filterConditions[0].conditionValue.type = FWP_UINT32;
 		filterConditions[0].conditionValue.uint32 =
 			FWP_CONDITION_L2_IS_NATIVE_ETHERNET
 			| FWP_CONDITION_L2_IS_WIFI;
 
 		filter.filterCondition = filterConditions;
+
+		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);*/
+
+		FWPM_FILTER0 filter;
+		ZeroMemory(&filter, sizeof(filter));
+
+		filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
+		filter.subLayerKey = sublayer.subLayerKey;
+		filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
+		filter.action.calloutKey = CALLOUT_GUID;
+		//filter.providerKey = &(provider.providerKey);
+		filter.providerKey = NULL;
+		filter.weight.type = FWP_EMPTY;
+		filter.displayData.name = FILTER_NAME;
+		filter.filterKey = FILTER_GUID;
+
+		filter.numFilterConditions = 1;
+		ZeroMemory(filterConditions, sizeof(filterConditions));
+		filterConditions[0].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
+		filterConditions[0].matchType = FWP_MATCH_GREATER_OR_EQUAL;
+		filterConditions[0].conditionValue.type = FWP_UINT16;
+		filterConditions[0].conditionValue.uint16 = 80;
+
+		filter.filterCondition = &filterConditions[0];
 
 		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
 
@@ -294,7 +313,7 @@ void StopSniffing(HANDLE handle)
 	);
 	if (result == ERROR_SUCCESS)
 	{
-		FwpmFilterDeleteByKey(engineHandle, &FILTER_GUID);
+		result = FwpmFilterDeleteByKey(engineHandle, &FILTER_GUID);
 		FwpmEngineClose(engineHandle);
 	}
 
