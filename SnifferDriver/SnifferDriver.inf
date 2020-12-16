@@ -1,87 +1,98 @@
+[Version]
+Signature="$WINDOWS NT$"
+
+[SnifferDriver.NT.Wdf]
+KmdfService = SnifferDriver, SnifferDriver_Service_kmdfInst
+
+[SnifferDriver_Service_kmdfInst]
+KmdfLibraryVersion = 1.11
+
+
+
 ;
 ; SnifferDriver.inf
 ;
-
-[Version]
-Signature="$WINDOWS NT$"
-Class=Sample ; TODO: edit Class
-ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
-Provider=%ManufacturerName%
-CatalogFile=SnifferDriver.cat
-DriverVer= ; TODO: set DriverVer in stampinf property pages
-PnpLockDown=1
-
-[DestinationDirs]
-DefaultDestDir = 12
-SnifferDriver_Device_CoInstaller_CopyFiles = 11
-
-; ================= Class section =====================
-
-[ClassInstall32]
-Addreg=SampleClassReg
-
-[SampleClassReg]
-HKR,,,0,%ClassName%
-HKR,,Icon,,-5
-
-[SourceDisksNames]
-1 = %DiskName%,,,""
-
-[SourceDisksFiles]
-SnifferDriver.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
-
-;*****************************************
-; Install Section
-;*****************************************
-
-[Manufacturer]
-%ManufacturerName%=Standard,NT$ARCH$
-
-[Standard.NT$ARCH$]
-%SnifferDriver.DeviceDesc%=SnifferDriver_Device, Root\SnifferDriver ; TODO: edit hw-id
-
-[SnifferDriver_Device.NT]
-CopyFiles=Drivers_Dir
-
-[Drivers_Dir]
-SnifferDriver.sys
-
-;-------------- Service installation
-[SnifferDriver_Device.NT.Services]
-AddService = SnifferDriver,%SPSVCINST_ASSOCSERVICE%, SnifferDriver_Service_Inst
-
-; -------------- SnifferDriver driver install sections
-[SnifferDriver_Service_Inst]
-DisplayName    = %SnifferDriver.SVCDESC%
-ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
-StartType      = 3               ; SERVICE_DEMAND_START
-ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
-ServiceBinary  = %12%\SnifferDriver.sys
-
 ;
-;--- SnifferDriver_Device Coinstaller installation ------
+;[Version]
+;Signature="$WINDOWS NT$"
+;Class=Sample ; TODO: edit Class
+;ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
+;Provider=%ManufacturerName%
+;CatalogFile=SnifferDriver.cat
+;DriverVer= ; TODO: set DriverVer in stampinf property pages
+;PnpLockDown=1
 ;
-
-[SnifferDriver_Device.NT.CoInstallers]
-AddReg=SnifferDriver_Device_CoInstaller_AddReg
-CopyFiles=SnifferDriver_Device_CoInstaller_CopyFiles
-
-[SnifferDriver_Device_CoInstaller_AddReg]
-HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
-
-[SnifferDriver_Device_CoInstaller_CopyFiles]
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
-
-[SnifferDriver_Device.NT.Wdf]
-KmdfService =  SnifferDriver, SnifferDriver_wdfsect
-[SnifferDriver_wdfsect]
-KmdfLibraryVersion = $KMDFVERSION$
-
-[Strings]
-SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
-ClassName="Samples" ; TODO: edit ClassName
-DiskName = "SnifferDriver Installation Disk"
-SnifferDriver.DeviceDesc = "SnifferDriver Device"
-SnifferDriver.SVCDESC = "SnifferDriver Service"
+;[DestinationDirs]
+;DefaultDestDir = 12
+;SnifferDriver_Device_CoInstaller_CopyFiles = 11
+;
+;; ================= Class section =====================
+;
+;[ClassInstall32]
+;Addreg=SampleClassReg
+;
+;[SampleClassReg]
+;HKR,,,0,%ClassName%
+;HKR,,Icon,,-5
+;
+;[SourceDisksNames]
+;1 = %DiskName%,,,""
+;
+;[SourceDisksFiles]
+;SnifferDriver.sys  = 1,,
+;WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
+;
+;;*****************************************
+;; Install Section
+;;*****************************************
+;
+;[Manufacturer]
+;%ManufacturerName%=Standard,NT$ARCH$
+;
+;[Standard.NT$ARCH$]
+;%SnifferDriver.DeviceDesc%=SnifferDriver_Device, Root\SnifferDriver ; TODO: edit hw-id
+;
+;[SnifferDriver_Device.NT]
+;CopyFiles=Drivers_Dir
+;
+;[Drivers_Dir]
+;SnifferDriver.sys
+;
+;;-------------- Service installation
+;[SnifferDriver_Device.NT.Services]
+;AddService = SnifferDriver,%SPSVCINST_ASSOCSERVICE%, SnifferDriver_Service_Inst
+;
+;; -------------- SnifferDriver driver install sections
+;[SnifferDriver_Service_Inst]
+;DisplayName    = %SnifferDriver.SVCDESC%
+;ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+;StartType      = 3               ; SERVICE_DEMAND_START
+;ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+;ServiceBinary  = %12%\SnifferDriver.sys
+;
+;;
+;;--- SnifferDriver_Device Coinstaller installation ------
+;;
+;
+;[SnifferDriver_Device.NT.CoInstallers]
+;AddReg=SnifferDriver_Device_CoInstaller_AddReg
+;CopyFiles=SnifferDriver_Device_CoInstaller_CopyFiles
+;
+;[SnifferDriver_Device_CoInstaller_AddReg]
+;HKR,,CoInstallers32,0x00010000, "WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll,WdfCoInstaller"
+;
+;[SnifferDriver_Device_CoInstaller_CopyFiles]
+;WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll
+;
+;[SnifferDriver_Device.NT.Wdf]
+;KmdfService =  SnifferDriver, SnifferDriver_wdfsect
+;[SnifferDriver_wdfsect]
+;KmdfLibraryVersion = $KMDFVERSION$
+;
+;[Strings]
+;SPSVCINST_ASSOCSERVICE= 0x00000002
+;ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+;ClassName="Samples" ; TODO: edit ClassName
+;DiskName = "SnifferDriver Installation Disk"
+;SnifferDriver.DeviceDesc = "SnifferDriver Device"
+;SnifferDriver.SVCDESC = "SnifferDriver Service"

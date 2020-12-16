@@ -24,12 +24,12 @@ typedef struct
 	UINT64 length;        // buffer length
 } RECEIVE_IOCTL, * PRECEIVE_IOCTL;
 
-// TODO: remove?
-//typedef struct
-//{
-//	UINT64* addr_len_ptr;                     // Pointer to address length.
-//	UINT64 addr_len;
-//};
+
+typedef struct _PACKET
+{
+	LIST_ENTRY entry;
+	byte data;
+} PACKET, *PPACKET;
 
 
 

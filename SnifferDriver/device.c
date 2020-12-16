@@ -173,24 +173,39 @@ void SnifferEvtWdfIoQueueIoRead(
 	// forward request to deviceObject queue
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
 	WDFFILEOBJECT fileObject;
-	NTSTATUS status;
+	NTSTATUS status = STATUS_SUCCESS;
 
 
 	fileObject = WdfRequestGetFileObject(Request);
 	fileObjectContext = GetFileObjectContext(fileObject);
 
-	// TODO: не блокируют?
-	status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
-
-	if (!NT_SUCCESS(status))
-	{
-		KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
+	/******
+	* 
+	* TODO
+	* 
+	*/
 		WdfRequestCompleteWithInformation(Request, status, 0);
-	}
+		return;
 
-	ProcessReadRequest(fileObjectContext);
 
-	return;
+	/*
+	* 
+	* 
+	* */
+
+		//TODO!!!!!
+	//// TODO: не блокируют?
+	//status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
+
+	//if (!NT_SUCCESS(status))
+	//{
+	//	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
+	//	WdfRequestCompleteWithInformation(Request, status, 0);
+	//}
+
+	//ProcessReadRequest(fileObjectContext);
+
+	//return;
 }
 
 VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues, IN OUT VOID* layerData, IN const FWPS_FILTER0* filter, IN UINT64 flowContext, IN OUT FWPS_CLASSIFY_OUT0* classifyOut)
@@ -219,7 +234,7 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
 
 	// TODO: где вызывать?
-	ProcessReadRequest(fileObjectContext);
+	//ProcessReadRequest(fileObjectContext);
 
 	classifyOut->actionType = FWP_ACTION_CONTINUE;
 }

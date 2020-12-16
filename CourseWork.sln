@@ -9,6 +9,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnifferDriver", "SnifferDri
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnifferLib", "SnifferLib\SnifferLib.vcxproj", "{C66F2A8A-F286-499E-A0FD-24C1AD954AA8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnifferTest", "SnifferTest\SnifferTest.vcxproj", "{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C66F2A8A-F286-499E-A0FD-24C1AD954AA8} = {C66F2A8A-F286-499E-A0FD-24C1AD954AA8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -81,6 +86,18 @@ Global
 		{C66F2A8A-F286-499E-A0FD-24C1AD954AA8}.Release|x64.Build.0 = Release|x64
 		{C66F2A8A-F286-499E-A0FD-24C1AD954AA8}.Release|x86.ActiveCfg = Release|Win32
 		{C66F2A8A-F286-499E-A0FD-24C1AD954AA8}.Release|x86.Build.0 = Release|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|ARM.ActiveCfg = Debug|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|x64.ActiveCfg = Debug|x64
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|x64.Build.0 = Debug|x64
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|x86.ActiveCfg = Debug|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Debug|x86.Build.0 = Debug|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|ARM.ActiveCfg = Release|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|ARM64.ActiveCfg = Release|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|x64.ActiveCfg = Release|x64
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|x64.Build.0 = Release|x64
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|x86.ActiveCfg = Release|Win32
+		{03406029-6420-4CF0-A7D9-52B8D8C5DDCF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

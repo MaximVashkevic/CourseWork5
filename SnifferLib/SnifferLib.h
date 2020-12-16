@@ -1,15 +1,5 @@
 #pragma once
 
-#ifndef __SNIFFERLIB_H
-#define __SNIFFERLIB_H
-
-#define SNIFFERLIBAPI __declspec(dllimport)
-
-#else
-#define SNIFFERLIBAPI __declspec(dllexport)
-
-#endif
-
 #include <Windows.h>
 #include <guiddef.h>
 
@@ -30,5 +20,12 @@ static const GUID CALLOUT_GUID =
 static const GUID FILTER_GUID =
 { 0x9e9e900d, 0x419e, 0x4450, { 0xa3, 0x15, 0x5d, 0xbf, 0x6f, 0x78, 0xd0, 0x8a } };
 
+#define SNIFFER_DEVICE_NAME L"Sniffer"
+#define DEVICE_NAME  L"\\DosDevices\\"  SNIFFER_DEVICE_NAME
 
-extern "C" DWORD StartSniffing();
+extern "C"  HANDLE StartSniffing();
+
+extern "C"  ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength);
+
+extern "C" void StopSniffing(HANDLE handle);
+

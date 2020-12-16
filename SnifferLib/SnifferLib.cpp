@@ -1,7 +1,6 @@
 ﻿// SnifferLib.cpp : Defines the functions for the static library.
 //
 
-#include "pch.h"
 #include "framework.h"
 #include "SnifferLib.h"
 #include <fwptypes.h>
@@ -9,16 +8,131 @@
 
 #pragma comment(lib, "fwpuclnt.lib")
 
-// TODO: This is an example of a library function
-void fnSnifferLib()
+const WCHAR DRIVER_NAME[] = L"SnifferDriver.sys";
+
+bool GetDriverPath(LPWSTR driverPath)
 {
+	size_t length;
+	size_t driverNameLength = sizeof(DRIVER_NAME) / sizeof(WCHAR);
+
+	length = GetModuleFileName(NULL, driverPath, MAX_PATH);
+
+	if (length == 0)
+	{
+		return false;
+	}
+
+	// find \ in path
+	for (; length > 0 && driverPath[length] != L'\\'; --length);
+
+	if (driverPath[length] != L'\\' || length + driverNameLength + 1 >= MAX_PATH)
+	{
+		return false;
+	}
+
+	for (int i = 0; i < driverNameLength; ++i)
+	{
+		length++;
+		driverPath[length] = DRIVER_NAME[i];
+	}
+
+	return true;
 }
 
-DWORD StartSniffing()
+bool InstallDriver()
+{
+	SC_HANDLE managerHandle = NULL;
+	SC_HANDLE serviceHandle = NULL;
+	WCHAR driverPath[MAX_PATH + 1];
+
+	bool result = false;
+
+	do
+	{
+		managerHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+		if (managerHandle == NULL)
+		{
+			break;
+		}
+
+		serviceHandle = OpenService(managerHandle, SNIFFER_DEVICE_NAME, SERVICE_ALL_ACCESS);
+		if (serviceHandle != NULL)
+		{
+			// driver is already installed
+			break;
+		}
+
+		if (!GetDriverPath(driverPath))
+		{
+			break;
+		}
+
+		serviceHandle = CreateService(
+			managerHandle,              // SCM database 
+			SNIFFER_DEVICE_NAME,                   // name of service 
+			SNIFFER_DEVICE_NAME,                   // service name to display 
+			SERVICE_ALL_ACCESS,        // desired access 
+			SERVICE_KERNEL_DRIVER, // service type 
+			SERVICE_DEMAND_START,      // start type 
+			SERVICE_ERROR_NORMAL,      // error control type 
+			driverPath,                    // path to service's binary 
+			NULL,                      // no load ordering group 
+			NULL,                      // no tag identifier 
+			NULL,                      // no dependencies 
+			NULL,                      // LocalSystem account 
+			NULL);                     // no password 
+		if (serviceHandle == NULL && GetLastError() == ERROR_SERVICE_EXISTS)
+		{
+			serviceHandle = OpenService(managerHandle, SNIFFER_DEVICE_NAME, SERVICE_ALL_ACCESS);
+		}
+	} while (false);
+
+	if (serviceHandle != NULL)
+	{
+		result = StartService(serviceHandle, 0, NULL);
+		if (!result)
+		{
+			result = (GetLastError() == ERROR_SERVICE_ALREADY_RUNNING);
+		}
+		else
+		{
+			DeleteService(serviceHandle);
+		}
+	}
+
+	if (serviceHandle != NULL)
+	{
+		CloseServiceHandle(serviceHandle);
+	}
+
+	if (managerHandle != NULL)
+	{
+		CloseServiceHandle(managerHandle);
+	}
+
+	return result;
+}
+
+
+HANDLE StartSniffing()
 {
 	HANDLE engineHandle = NULL;
+	HANDLE fileHandle = NULL;
 	DWORD result = ERROR_SUCCESS;
 	FWPM_SESSION0 session;
+
+	InstallDriver();
+
+	fileHandle = CreateFile(DEVICE_NAME,
+		GENERIC_READ, 0, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, // | FILE_FLAG_OVERLAPPED (async IO?)
+		INVALID_HANDLE_VALUE); // NULL
+
+	if (fileHandle == INVALID_HANDLE_VALUE)
+	{
+		return 0;
+	}
+
 	do
 	{
 		ZeroMemory(&session, sizeof(session));
@@ -52,7 +166,7 @@ DWORD StartSniffing()
 
 		result = FwpmProviderAdd0(engineHandle, &provider, NULL);
 
-		if (result != FWP_E_ALREADY_EXISTS || result != ERROR_SUCCESS)
+		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 		{
 			break;
 		}
@@ -92,14 +206,65 @@ DWORD StartSniffing()
 		filter.weight.type = FWP_EMPTY;
 		filter.numFilterConditions = 0;
 
+		filter.filterKey = FILTER_GUID;
 
-
-		if (engineHandle && result != ERROR_SUCCESS)
-		{
-			FwpmTransactionAbort(engineHandle);
-		}
 
 	} while (FALSE);
 
-	return result;
+	if (engineHandle)
+	{
+		if (result != ERROR_SUCCESS)
+		{
+			FwpmTransactionAbort(engineHandle);
+		}
+		FwpmEngineClose(engineHandle);
+	}
+
+
+	if (result == ERROR_SUCCESS)
+	{
+		return fileHandle;
+	}
+	else
+	{
+		CloseHandle(fileHandle);
+		return 0;
+	}
+}
+
+ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength)
+{
+	ULONG returned = 0;
+	ReadFile(handle,
+		buffer,
+		bufferLength,
+		&returned,
+		NULL);
+	return returned;
+}
+
+void StopSniffing(HANDLE handle)
+{
+	HANDLE engineHandle = NULL;
+	DWORD result = ERROR_SUCCESS;
+	FWPM_SESSION0 session;
+	ZeroMemory(&session, sizeof(session));
+	session.txnWaitTimeoutInMSec = INFINITE;
+	result = FwpmEngineOpen0(
+		NULL,
+		RPC_C_AUTHN_WINNT,
+		NULL,
+		&session,
+		&engineHandle
+	);
+	if (result == ERROR_SUCCESS)
+	{
+		FwpmFilterDeleteByKey(engineHandle, &FILTER_GUID);
+		FwpmEngineClose(engineHandle);
+	}
+
+	if (handle != NULL)
+	{
+		CloseHandle(handle);
+	}
 }
