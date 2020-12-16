@@ -172,7 +172,7 @@ CreateDevice(
         KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't create symlink\n"));
         goto Cleanup;
     }
-    status = AddCallout(IP_CALLOUT_GUID);
+    status = AddCallout(MAC_OUT_CALLOUT_GUID);
     status = AddCallout(MAC_IN_CALLOUT_GUID);
     //AddCallout(MAC_OUT_CALLOUT_GUID);
     //AddCallout(MAC_OUT_CALLOUT_GUID);
