@@ -24,12 +24,16 @@ typedef struct
 	UINT64 length;        // buffer length
 } RECEIVE_IOCTL, * PRECEIVE_IOCTL;
 
-
 typedef struct _PACKET
 {
 	LIST_ENTRY entry;
-	byte data;
+	UINT length;
+	SIZE_T data;
+
 } PACKET, *PPACKET;
+
+#define MAX_PACKET_LENGTH (40 + 0xFFFF)
+#define MAX_PACKET_QUEUE_LENGTH 10
 
 
 

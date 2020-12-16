@@ -2,6 +2,8 @@
 
 // specify code sections for functions
 
+#define SNIFFER_TAG 'finS'
+
 //#ifdef ALLOC_PRAGMA
 //#pragma alloc_text (PAGE, SnifferDeviceCreate)
 //#endif
@@ -16,6 +18,9 @@
 //
 //    PAGED_CODE();
 //}
+
+void SnifferFree(PVOID pointer);
+
 
 void SnifferEvtWdfDeviceFileCreate(
 	WDFDEVICE Device,
@@ -88,8 +93,24 @@ void SnifferEvtWdfFileCleanup(
 
 void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
 {
-	UNREFERENCED_PARAMETER(objectContext);
-	// TODO free queue;
+	KLOCK_QUEUE_HANDLE lockHandle;
+	PLIST_ENTRY entry;
+
+	KeAcquireInStackQueuedSpinLock(&objectContext->lock, &lockHandle);
+
+	while (!IsListEmpty(&objectContext->RecvNetBufListQueue))
+	{
+		entry = RemoveHeadList(&objectContext->RecvNetBufListQueue);
+
+		PVOID pPacket = entry;
+
+		SnifferFree(pPacket);
+
+		objectContext->RecvNetBufListCount--;
+	}
+
+	KeReleaseInStackQueuedSpinLock(&lockHandle);
+	
 }
 
 // TODO
@@ -180,39 +201,80 @@ void SnifferEvtWdfIoQueueIoRead(
 	fileObjectContext = GetFileObjectContext(fileObject);
 
 	/******
-	* 
+	*
 	* TODO
-	* 
+	*
 	*/
-		WdfRequestCompleteWithInformation(Request, status, 0);
-		return;
+	WdfRequestCompleteWithInformation(Request, status, 0);
+	return;
 
 
 	/*
-	* 
-	* 
+	*
+	*
 	* */
 
-		//TODO!!!!!
-	//// TODO: не блокируют?
-	//status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
+	//TODO!!!!!
+//// TODO: не блокируют?
+//status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
 
-	//if (!NT_SUCCESS(status))
-	//{
-	//	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
-	//	WdfRequestCompleteWithInformation(Request, status, 0);
-	//}
+//if (!NT_SUCCESS(status))
+//{
+//	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
+//	WdfRequestCompleteWithInformation(Request, status, 0);
+//}
 
-	//ProcessReadRequest(fileObjectContext);
+//ProcessReadRequest(fileObjectContext);
 
-	//return;
+//return;
+}
+
+PVOID SnifferNonPagedMalloc(SIZE_T size)
+{
+	if (size == 0)
+	{
+		return NULL;
+	}
+	return ExAllocatePoolWithTag(NonPagedPool, size, SNIFFER_TAG);
+}
+
+void SnifferFree(PVOID pointer)
+{
+	if (pointer != NULL)
+	{
+		ExFreePoolWithTag(pointer, SNIFFER_TAG);
+	}
+}
+
+BOOL SnifferCopyBuffer(PNET_BUFFER pNB, PVOID data, UINT size)
+{
+	PVOID ptr;
+
+	ptr = NdisGetDataBuffer(pNB, size, NULL, 1, 0);
+	if (ptr != NULL) // data is contiguous
+	{
+		RtlCopyMemory(data, ptr, size);
+	}
+	else
+	{
+		ptr = NdisGetDataBuffer(pNB, size, data, 1, 0);
+		if (ptr == NULL)
+		{
+			return FALSE;
+		}
+	}
+
+	return TRUE;
 }
 
 VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues, IN OUT VOID* layerData, IN const FWPS_FILTER0* filter, IN UINT64 flowContext, IN OUT FWPS_CLASSIFY_OUT0* classifyOut)
 {
-	/*P_FILE_OBJECT_CONTEXT fileObjectContext;
-	KLOCK_QUEUE_HANDLE	lockHandle;*/
+	P_FILE_OBJECT_CONTEXT fileObjectContext;
+	KLOCK_QUEUE_HANDLE	lockHandle;
+	PNET_BUFFER_LIST rawData;
 
+	UCHAR buffer[14];
+	UCHAR* header;
 
 	UNREFERENCED_PARAMETER(flowContext);
 	UNREFERENCED_PARAMETER(filter);
@@ -221,19 +283,60 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: classifyFn\n"));
 
-	UNREFERENCED_PARAMETER(layerData);
+	//UNREFERENCED_PARAMETER(layerData);
 
-	/*PNET_BUFFER_LIST rawData;
 
-	rawData = (PNET_BUFFER_LIST)layerData;
 
 	fileObjectContext = GetFileObjectContext(GlobalFileObject);
 
 	KeAcquireInStackQueuedSpinLock(&(fileObjectContext->lock), &lockHandle);
 
+	if (fileObjectContext->RecvNetBufListCount <= MAX_PACKET_QUEUE_LENGTH)
+	{
+		rawData = (PNET_BUFFER_LIST)layerData;
 
+		for (PNET_BUFFER_LIST pNBL = rawData; pNBL; pNBL = NET_BUFFER_LIST_NEXT_NBL(pNBL))
+		{
+			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "-----------NBL:\n"));
 
-	KeReleaseInStackQueuedSpinLock(&lockHandle);*/
+			for (PNET_BUFFER pNB = NET_BUFFER_LIST_FIRST_NB(pNBL); pNB; pNB = NET_BUFFER_NEXT_NB(pNB))
+			{
+
+				ULONG size = NET_BUFFER_DATA_LENGTH(pNB);
+				header = NdisGetDataBuffer(pNB, sizeof(buffer), buffer, 1, 0);
+				if (!header)
+				{
+					continue;
+				}
+
+				KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
+					"Size: %10i MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n",
+					size,
+					header[0], header[1], header[2], header[3], header[4], header[5]));
+
+				if (size < MAX_PACKET_LENGTH)
+				{
+					// TODO: check - from size
+					PVOID pPacket = SnifferNonPagedMalloc(sizeof(PACKET) - sizeof(SIZE_T) + size);
+
+					((PPACKET)pPacket)->length = size;
+					PVOID pPacketData = &(((PPACKET)pPacket)->data);
+					if (SnifferCopyBuffer(pNB, pPacketData, size))
+					{
+						PLIST_ENTRY pEntry = &(((PPACKET)pPacket)->entry);
+						InsertTailList(
+							&(fileObjectContext->RecvNetBufListQueue),
+							pEntry);
+						(fileObjectContext->RecvNetBufListCount)++;
+						// enqueue
+					}
+				}
+			}
+		}
+	}
+
+	// TODO: replace?
+	KeReleaseInStackQueuedSpinLock(&lockHandle);
 
 	// TODO: где вызывать?
 	//ProcessReadRequest(fileObjectContext);
