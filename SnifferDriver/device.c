@@ -27,7 +27,7 @@ void SnifferEvtWdfDeviceFileCreate(
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
 	WDF_IO_QUEUE_CONFIG             queueConfig;
 
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: creating device\n"));
+	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: opening file\n"));
 
 	fileObjectContext = GetFileObjectContext(FileObject);
 

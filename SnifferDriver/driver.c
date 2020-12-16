@@ -11,6 +11,26 @@ UINT32 CalloutId = 0;
 WDFDEVICE device = NULL;
 WDFFILEOBJECT GlobalFileObject = NULL;
 
+NTSTATUS AddCallout(GUID guid)
+{
+    // create callout
+    PDEVICE_OBJECT deviceObject;
+    FWPS_CALLOUT0 callout;
+    deviceObject = WdfDeviceWdmGetDeviceObject(device);
+    RtlZeroMemory(&callout, sizeof(callout));
+    callout.calloutKey = guid;
+    callout.classifyFn = ClassifyFn;
+    callout.notifyFn = NotifyFn;
+    callout.flowDeleteFn = NULL;
+
+    NTSTATUS result = FwpsCalloutRegister0(
+        deviceObject,
+        &callout,
+        NULL);
+
+    return result;
+}
+
 NTSTATUS
 DriverEntry(
     _In_ PDRIVER_OBJECT     DriverObject,
@@ -76,8 +96,6 @@ CreateDevice(
     WDF_OBJECT_ATTRIBUTES objectAttributes;
     WDF_IO_QUEUE_CONFIG queueConfig;
     WDFQUEUE queue;
-    PDEVICE_OBJECT deviceObject;
-    FWPS_CALLOUT0 callout;
 
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: create device\n"));
 
@@ -148,19 +166,16 @@ CreateDevice(
     }
     WdfControlFinishInitializing(device);
 
-    // create callout
-    deviceObject = WdfDeviceWdmGetDeviceObject(device);
-    RtlZeroMemory(&callout, sizeof(callout));
-    callout.calloutKey = CALLOUT_GUID;
-    callout.classifyFn = ClassifyFn;
-    //callout.notifyFn = NULL;
-    callout.notifyFn = NotifyFn;
-    callout.flowDeleteFn = NULL;
-
-    status = FwpsCalloutRegister0(
-        deviceObject,
-        &callout,
-        &CalloutId);
+    status = AddCallout(MAC_OUT_CALLOUT_GUID);
+    if (!NT_SUCCESS(status))
+    {
+        KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't create symlink\n"));
+        goto Cleanup;
+    }
+    status = AddCallout(IP_CALLOUT_GUID);
+    status = AddCallout(MAC_IN_CALLOUT_GUID);
+    //AddCallout(MAC_OUT_CALLOUT_GUID);
+    //AddCallout(MAC_OUT_CALLOUT_GUID);
 
     if (!NT_SUCCESS(status))
     {
@@ -180,6 +195,8 @@ Cleanup:
 
     return status;
 }
+
+
 
 void SnifferDriverUnload(
     WDFDRIVER Driver
@@ -201,6 +218,8 @@ void SnifferDriverUnload(
 
 NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
 {
+    KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: notify\n"));
+
     UNREFERENCED_PARAMETER(notifyType);
     UNREFERENCED_PARAMETER(filterKey);
     UNREFERENCED_PARAMETER(filter);

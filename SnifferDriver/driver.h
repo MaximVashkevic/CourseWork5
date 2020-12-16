@@ -20,3 +20,5 @@ CreateDevice(
     IN WDFDRIVER Driver,
     IN PWDFDEVICE_INIT DeviceInit
 );
+
+NTSTATUS AddCallout();

@@ -10,6 +10,7 @@
 
 const WCHAR DRIVER_NAME[] = L"SnifferDriver.sys";
 
+bool AddCallout(HANDLE engineHandle, GUID guid, GUID layer);
 
 bool GetDriverPath(LPWSTR driverPath)
 {
@@ -123,7 +124,6 @@ HANDLE StartSniffing()
 	FWPM_SESSION0 session;
 	WCHAR PROVIDER_NAME[] = L"SnifferProvider";
 	WCHAR FILTER_NAME[] = L"SnifferFIlter";
-	WCHAR CALLOUT_NAME[] = L"Sniffercalluot";
 	WCHAR SUBLAYER_NAME[] = L"Sniffersublayer";
 	FWPM_FILTER_CONDITION filterConditions[1];
 
@@ -199,17 +199,7 @@ HANDLE StartSniffing()
 		callout.displayData.name = CALLOUT_NAME;*/
 		//callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
 
-		FWPM_CALLOUT0 callout;
-		ZeroMemory(&callout, sizeof(callout));
-		callout.calloutKey = CALLOUT_GUID;
-		callout.applicableLayer = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-		callout.displayData.name = CALLOUT_NAME;
-
-		result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
-		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
-		{
-			break;
-		}
+		AddCallout(engineHandle, IP_CALLOUT_GUID, FWPM_LAYER_ALE_AUTH_CONNECT_V4);
 		/*FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
 
@@ -220,7 +210,7 @@ HANDLE StartSniffing()
 		filter.providerKey = &(provider.providerKey);
 		filter.weight.type = FWP_EMPTY;
 		filter.displayData.name = FILTER_NAME;
-		filter.filterKey = FILTER_GUID;
+		filter.filterKey = MAC_OUT_FILTER_GUID;
 
 		filter.numFilterConditions = 1;
 		ZeroMemory(filterConditions, sizeof(filterConditions));
@@ -241,12 +231,12 @@ HANDLE StartSniffing()
 		filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
 		filter.subLayerKey = sublayer.subLayerKey;
 		filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
-		filter.action.calloutKey = CALLOUT_GUID;
+		filter.action.calloutKey = IP_CALLOUT_GUID;
 		//filter.providerKey = &(provider.providerKey);
 		filter.providerKey = NULL;
 		filter.weight.type = FWP_EMPTY;
 		filter.displayData.name = FILTER_NAME;
-		filter.filterKey = FILTER_GUID;
+		filter.filterKey = MAC_OUT_FILTER_GUID;
 
 		filter.numFilterConditions = 1;
 		ZeroMemory(filterConditions, sizeof(filterConditions));
@@ -286,6 +276,25 @@ HANDLE StartSniffing()
 	}
 }
 
+bool AddCallout(HANDLE engineHandle, GUID guid, GUID layer)
+{
+	WCHAR CALLOUT_NAME[] = L"Sniffercalluot";
+
+	FWPM_CALLOUT0 callout;
+	ZeroMemory(&callout, sizeof(callout));
+	callout.calloutKey = guid;
+	callout.applicableLayer = layer;
+	callout.displayData.name = CALLOUT_NAME;
+
+	DWORD result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
+	if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
+	{
+		return false;
+	}
+
+	return true;
+}
+
 ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength)
 {
 	ULONG returned = 0;
@@ -313,7 +322,7 @@ void StopSniffing(HANDLE handle)
 	);
 	if (result == ERROR_SUCCESS)
 	{
-		result = FwpmFilterDeleteByKey(engineHandle, &FILTER_GUID);
+		result = FwpmFilterDeleteByKey(engineHandle, &MAC_OUT_FILTER_GUID);
 		FwpmEngineClose(engineHandle);
 	}
 
