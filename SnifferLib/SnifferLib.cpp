@@ -115,6 +115,24 @@ bool InstallDriver()
 	return result;
 }
 
+DWORD AddFilter(HANDLE engineHandle, GUID layerGuid, GUID calloutGuid, GUID filterGuid, GUID sublayerKey)
+{
+	FWPM_FILTER0 filter;
+	ZeroMemory(&filter, sizeof(filter));
+
+	filter.layerKey = layerGuid;
+	filter.filterKey = filterGuid;
+	filter.subLayerKey = sublayerKey;
+	filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
+	filter.action.calloutKey = calloutGuid;
+	//filter.providerKey = &(provider.providerKey);
+	filter.providerKey = NULL;
+	filter.weight.type = FWP_EMPTY;
+	filter.displayData.name = const_cast<PWCHAR>(L"Filter");
+
+	filter.numFilterConditions = 0;
+	return FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
+}
 
 HANDLE StartSniffing()
 {
@@ -199,7 +217,8 @@ HANDLE StartSniffing()
 		callout.displayData.name = CALLOUT_NAME;*/
 		//callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
 
-		AddCallout(engineHandle, IP_CALLOUT_GUID, FWPM_LAYER_ALE_AUTH_CONNECT_V4);
+		result = AddCallout(engineHandle, MAC_IN_CALLOUT_GUID, FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE);
+		result = AddCallout(engineHandle, MAC_OUT_CALLOUT_GUID, FWPM_LAYER_OUTBOUND_MAC_FRAME_NATIVE);
 		/*FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
 
@@ -228,26 +247,30 @@ HANDLE StartSniffing()
 		FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
 
-		filter.layerKey = FWPM_LAYER_ALE_AUTH_CONNECT_V4;
-		filter.subLayerKey = sublayer.subLayerKey;
-		filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
-		filter.action.calloutKey = IP_CALLOUT_GUID;
-		//filter.providerKey = &(provider.providerKey);
-		filter.providerKey = NULL;
-		filter.weight.type = FWP_EMPTY;
-		filter.displayData.name = FILTER_NAME;
-		filter.filterKey = MAC_OUT_FILTER_GUID;
+		result = AddFilter(engineHandle, FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE, MAC_IN_CALLOUT_GUID, MAC_IN_FILTER_GUID, sublayer.subLayerKey);
+		result = AddFilter(engineHandle, FWPM_LAYER_OUTBOUND_MAC_FRAME_NATIVE, MAC_OUT_CALLOUT_GUID, MAC_OUT_FILTER_GUID, sublayer.subLayerKey);
 
-		filter.numFilterConditions = 1;
+		//filter.layerKey = FWPM_LAYER_INBOUND_MAC_FRAME_NATIVE;
+		//filter.filterKey = MAC_IN_FILTER_GUID;
+		//filter.subLayerKey = sublayer.subLayerKey;
+		//filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
+		//filter.action.calloutKey = IP_CALLOUT_GUID;
+		////filter.providerKey = &(provider.providerKey);
+		//filter.providerKey = NULL;
+		//filter.weight.type = FWP_EMPTY;
+		//filter.displayData.name = FILTER_NAME;
+
+		//filter.numFilterConditions = 0;
+		//result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
+		/*filter.numFilterConditions = 1;
 		ZeroMemory(filterConditions, sizeof(filterConditions));
 		filterConditions[0].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
 		filterConditions[0].matchType = FWP_MATCH_GREATER_OR_EQUAL;
 		filterConditions[0].conditionValue.type = FWP_UINT16;
 		filterConditions[0].conditionValue.uint16 = 80;
 
-		filter.filterCondition = &filterConditions[0];
+		filter.filterCondition = &filterConditions[0];*/
 
-		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
 
 	} while (FALSE);
 
