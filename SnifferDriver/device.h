@@ -57,6 +57,13 @@ ClassifyFn(
 	IN OUT FWPS_CLASSIFY_OUT0* classifyOut
 );
 
+NTSTATUS NTAPI
+NotifyFn(
+	IN FWPS_CALLOUT_NOTIFY_TYPE  notifyType,
+	IN const GUID* filterKey,
+	IN const FWPS_FILTER0* filter
+);
+
 void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext);
 
 extern WDFFILEOBJECT GlobalFileObject;

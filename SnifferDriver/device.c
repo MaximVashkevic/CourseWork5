@@ -210,8 +210,8 @@ void SnifferEvtWdfIoQueueIoRead(
 
 VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INCOMING_METADATA_VALUES0* inMetaValues, IN OUT VOID* layerData, IN const FWPS_FILTER0* filter, IN UINT64 flowContext, IN OUT FWPS_CLASSIFY_OUT0* classifyOut)
 {
-	P_FILE_OBJECT_CONTEXT fileObjectContext;
-	KLOCK_QUEUE_HANDLE	lockHandle;
+	/*P_FILE_OBJECT_CONTEXT fileObjectContext;
+	KLOCK_QUEUE_HANDLE	lockHandle;*/
 
 
 	UNREFERENCED_PARAMETER(flowContext);
@@ -221,7 +221,9 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: classifyFn\n"));
 
-	PNET_BUFFER_LIST rawData;
+	UNREFERENCED_PARAMETER(layerData);
+
+	/*PNET_BUFFER_LIST rawData;
 
 	rawData = (PNET_BUFFER_LIST)layerData;
 
@@ -231,7 +233,7 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 
 
 
-	KeReleaseInStackQueuedSpinLock(&lockHandle);
+	KeReleaseInStackQueuedSpinLock(&lockHandle);*/
 
 	// TODO: где вызывать?
 	//ProcessReadRequest(fileObjectContext);

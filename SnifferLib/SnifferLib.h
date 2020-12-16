@@ -21,7 +21,7 @@ static const GUID FILTER_GUID =
 { 0x9e9e900d, 0x419e, 0x4450, { 0xa3, 0x15, 0x5d, 0xbf, 0x6f, 0x78, 0xd0, 0x8a } };
 
 #define SNIFFER_DEVICE_NAME L"Sniffer"
-#define DEVICE_NAME  L"\\DosDevices\\"  SNIFFER_DEVICE_NAME
+#define DEVICE_NAME  L"\\\\.\\"  SNIFFER_DEVICE_NAME
 
 extern "C"  HANDLE StartSniffing();
 

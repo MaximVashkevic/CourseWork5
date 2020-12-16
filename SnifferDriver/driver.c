@@ -7,7 +7,7 @@
 #pragma alloc_text (INIT, DriverEntry)
 #endif
 
-UINT32 CalloutId;
+UINT32 CalloutId = 0;
 WDFDEVICE device = NULL;
 WDFFILEOBJECT GlobalFileObject = NULL;
 
@@ -153,8 +153,8 @@ CreateDevice(
     RtlZeroMemory(&callout, sizeof(callout));
     callout.calloutKey = CALLOUT_GUID;
     callout.classifyFn = ClassifyFn;
-    callout.notifyFn = NULL;
-    //callout.notifyFn = NotifyFn;
+    //callout.notifyFn = NULL;
+    callout.notifyFn = NotifyFn;
     callout.flowDeleteFn = NULL;
 
     status = FwpsCalloutRegister0(
@@ -187,6 +187,11 @@ void SnifferDriverUnload(
 {
     UNREFERENCED_PARAMETER(Driver);
     KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: unload driver\n"));
+
+    FwpsCalloutUnregisterById0(
+        CalloutId
+    );
+
     if (device != NULL)
     {
         WdfObjectDelete(device);
@@ -194,7 +199,10 @@ void SnifferDriverUnload(
 }
 
 
-//NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
-//{
-//    return STATUS_SUCCESS;
-//}
+NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
+{
+    UNREFERENCED_PARAMETER(notifyType);
+    UNREFERENCED_PARAMETER(filterKey);
+    UNREFERENCED_PARAMETER(filter);
+    return STATUS_SUCCESS;
+}

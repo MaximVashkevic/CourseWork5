@@ -10,6 +10,7 @@
 
 const WCHAR DRIVER_NAME[] = L"SnifferDriver.sys";
 
+
 bool GetDriverPath(LPWSTR driverPath)
 {
 	size_t length;
@@ -120,6 +121,10 @@ HANDLE StartSniffing()
 	HANDLE fileHandle = NULL;
 	DWORD result = ERROR_SUCCESS;
 	FWPM_SESSION0 session;
+	WCHAR PROVIDER_NAME[] = L"SnifferProvider";
+	WCHAR FILTER_NAME[] = L"SnifferFIlter";
+	WCHAR CALLOUT_NAME[] = L"Sniffercalluot";
+	WCHAR SUBLAYER_NAME[] = L"Sniffersublayer";
 
 	InstallDriver();
 
@@ -163,6 +168,7 @@ HANDLE StartSniffing()
 		ZeroMemory(&provider, sizeof(provider));
 		provider.providerKey = PROVIDER_GUID;
 		provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
+		provider.displayData.name = PROVIDER_NAME;
 
 		result = FwpmProviderAdd0(engineHandle, &provider, NULL);
 
@@ -177,6 +183,7 @@ HANDLE StartSniffing()
 		sublayer.flags = FWPM_SUBLAYER_FLAG_PERSISTENT;
 		sublayer.providerKey = &(provider.providerKey);
 		sublayer.weight = 0x8000;
+		sublayer.displayData.name = SUBLAYER_NAME;
 
 		result = FwpmSubLayerAdd0(engineHandle, &sublayer, NULL);
 		if (result != ERROR_SUCCESS)
@@ -193,6 +200,7 @@ HANDLE StartSniffing()
 		ZeroMemory(&callout, sizeof(callout));
 		callout.calloutKey = CALLOUT_GUID;
 		callout.applicableLayer = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
+		callout.displayData.name = CALLOUT_NAME;
 		result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
 
 		FWPM_FILTER0 filter;
@@ -205,9 +213,9 @@ HANDLE StartSniffing()
 		filter.providerKey = &(provider.providerKey);
 		filter.weight.type = FWP_EMPTY;
 		filter.numFilterConditions = 0;
-
+		filter.displayData.name = FILTER_NAME;
 		filter.filterKey = FILTER_GUID;
-
+		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
 
 	} while (FALSE);
 
@@ -216,6 +224,10 @@ HANDLE StartSniffing()
 		if (result != ERROR_SUCCESS)
 		{
 			FwpmTransactionAbort(engineHandle);
+		}
+		else
+		{
+			FwpmTransactionCommit(engineHandle);
 		}
 		FwpmEngineClose(engineHandle);
 	}
