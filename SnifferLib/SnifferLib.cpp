@@ -125,6 +125,7 @@ HANDLE StartSniffing()
 	WCHAR FILTER_NAME[] = L"SnifferFIlter";
 	WCHAR CALLOUT_NAME[] = L"Sniffercalluot";
 	WCHAR SUBLAYER_NAME[] = L"Sniffersublayer";
+	FWPM_FILTER_CONDITION filterConditions[1];
 
 	InstallDriver();
 
@@ -201,20 +202,42 @@ HANDLE StartSniffing()
 		callout.calloutKey = CALLOUT_GUID;
 		callout.applicableLayer = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
 		callout.displayData.name = CALLOUT_NAME;
+		//callout.flags = FWPM_CALLOUT_FLAG_PERSISTENT;
+
 		result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
+		if (result != ERROR_SUCCESS)
+		{
+			if (result == FWP_E_ALREADY_EXISTS)
+			{
+				result = ERROR_SUCCESS;
+			}
+
+			break;
+		}
 
 		FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
 
 		filter.layerKey = FWPM_LAYER_OUTBOUND_MAC_FRAME_ETHERNET;
-		filter.subLayerKey = SUBLAYER_GUID;
+		filter.subLayerKey = sublayer.subLayerKey;
 		filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
 		filter.action.calloutKey = CALLOUT_GUID;
 		filter.providerKey = &(provider.providerKey);
 		filter.weight.type = FWP_EMPTY;
-		filter.numFilterConditions = 0;
 		filter.displayData.name = FILTER_NAME;
 		filter.filterKey = FILTER_GUID;
+
+		filter.numFilterConditions = 1;
+		ZeroMemory(filterConditions, sizeof(filterConditions));
+		filterConditions[0].fieldKey = FWPM_CONDITION_L2_FLAGS;
+		filterConditions[0].matchType = FWP_MATCH_FLAGS_ALL_SET;
+		filterConditions[0].conditionValue.type = FWP_UINT32;
+		filterConditions[0].conditionValue.uint32 =
+			FWP_CONDITION_L2_IS_NATIVE_ETHERNET
+			| FWP_CONDITION_L2_IS_WIFI;
+
+		filter.filterCondition = filterConditions;
+
 		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
 
 	} while (FALSE);
