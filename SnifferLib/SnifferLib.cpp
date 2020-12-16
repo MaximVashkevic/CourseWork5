@@ -346,6 +346,8 @@ void StopSniffing(HANDLE handle)
 	if (result == ERROR_SUCCESS)
 	{
 		result = FwpmFilterDeleteByKey(engineHandle, &MAC_OUT_FILTER_GUID);
+		result = FwpmFilterDeleteByKey(engineHandle, &MAC_IN_FILTER_GUID);
+
 		FwpmEngineClose(engineHandle);
 	}
 
