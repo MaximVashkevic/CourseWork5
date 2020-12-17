@@ -331,26 +331,6 @@ ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength)
 
 void StopSniffing(HANDLE handle)
 {
-	HANDLE engineHandle = NULL;
-	DWORD result = ERROR_SUCCESS;
-	FWPM_SESSION0 session;
-	ZeroMemory(&session, sizeof(session));
-	session.txnWaitTimeoutInMSec = INFINITE;
-	result = FwpmEngineOpen0(
-		NULL,
-		RPC_C_AUTHN_WINNT,
-		NULL,
-		&session,
-		&engineHandle
-	);
-	if (result == ERROR_SUCCESS)
-	{
-		result = FwpmFilterDeleteByKey(engineHandle, &MAC_OUT_FILTER_GUID);
-		result = FwpmFilterDeleteByKey(engineHandle, &MAC_IN_FILTER_GUID);
-
-		FwpmEngineClose(engineHandle);
-	}
-
 	if (handle != NULL)
 	{
 		CloseHandle(handle);

@@ -1,6 +1,15 @@
 #include "common.h"
 
+#define MAX_PACKET_LENGTH (40 + 0xFFFF)
+#define MAX_PACKET_QUEUE_LENGTH 10
+#define MAX_FILTER_COUNT 2
 
+#define SNIFFER_TAG 'finS'
+#define FILTER_CONTEXT_TAG 'tliF'
+
+typedef struct FILTER_CONTEXT_ {
+	int guidId;
+} FILTER_CONTEXT, * PFILTER_CONTEXT;
 
 typedef struct _FILE_OBJECT_CONTEXT
 {
@@ -10,7 +19,8 @@ typedef struct _FILE_OBJECT_CONTEXT
 	ULONG                   RecvNetBufListCount;
 	KSPIN_LOCK              lock;
 
-
+	GUID					filters[2];
+	int						filterCount;
 } FILE_OBJECT_CONTEXT, * P_FILE_OBJECT_CONTEXT;
 
 
@@ -31,11 +41,6 @@ typedef struct _PACKET
 	SIZE_T data;
 
 } PACKET, *PPACKET;
-
-#define MAX_PACKET_LENGTH (40 + 0xFFFF)
-#define MAX_PACKET_QUEUE_LENGTH 10
-
-
 
 //NTSTATUS
 //SnifferDeviceCreate(

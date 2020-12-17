@@ -2,8 +2,6 @@
 
 // specify code sections for functions
 
-#define SNIFFER_TAG 'finS'
-
 //#ifdef ALLOC_PRAGMA
 //#pragma alloc_text (PAGE, SnifferDeviceCreate)
 //#endif
@@ -78,6 +76,9 @@ void SnifferEvtWdfFileCleanup(
 )
 {
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
+	KLOCK_QUEUE_HANDLE lockHandle;
+	GlobalFileObject = NULL;
+	GUID emptyGuid = { 0 };
 
 	fileObjectContext = GetFileObjectContext(FileObject);
 	// TODO stop classify, cleanup
@@ -89,6 +90,31 @@ void SnifferEvtWdfFileCleanup(
 
 	// TODO: блокировать?
 	FreeReceiveQueue(fileObjectContext);
+
+	KeAcquireInStackQueuedSpinLock(&fileObjectContext->lock, &lockHandle);
+
+	HANDLE engineHandle = NULL;
+	DWORD result = 0;
+	result = FwpmEngineOpen0(
+		NULL,
+		RPC_C_AUTHN_WINNT,
+		NULL,
+		NULL,
+		&engineHandle
+	);
+	if (result == STATUS_SUCCESS)
+	{
+		for (int i = 0; i < MAX_FILTER_COUNT; ++i)
+		{
+			if (!IsEqualGUID(&fileObjectContext->filters[i], &emptyGuid))
+			{
+				result = FwpmFilterDeleteByKey(engineHandle, &fileObjectContext->filters[i]);
+			}
+		}
+	}
+
+	FwpmEngineClose(engineHandle);
+	KeReleaseInStackQueuedSpinLock(&lockHandle);
 }
 
 void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
@@ -110,7 +136,7 @@ void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
 	}
 
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
-	
+
 }
 
 // TODO
@@ -295,9 +321,12 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: classifyFn\n"));
 
-	//UNREFERENCED_PARAMETER(layerData);
+	classifyOut->actionType = FWP_ACTION_CONTINUE;
 
-
+	if (GlobalFileObject == NULL)
+	{
+		return;
+	}
 
 	fileObjectContext = GetFileObjectContext(GlobalFileObject);
 
@@ -357,7 +386,6 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 		ProcessReadRequest(fileObjectContext);
 	}
 
-	classifyOut->actionType = FWP_ACTION_CONTINUE;
 }
 
 //void SnifferEvtWdfIoQueueIoDeviceControl(
