@@ -101,7 +101,7 @@ private:
         {
             if (i != 0 && i % 16 == 0)
             {
-                s << std::endl;
+                s << L"\r\n";
             }
 
             if (i % 16 == 0)
