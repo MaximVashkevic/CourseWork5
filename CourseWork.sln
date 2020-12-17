@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnifferGui", "SnifferGui\Sn
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnifferDllForManaged", "NpcapDll\NpcapDll.vcxproj", "{E169FB3E-0CD7-446B-BCC2-D102AFFD5806}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnifferApp", "SnifferApp\SnifferApp.vcxproj", "{AD305E3F-1D2A-476E-BA92-10B4317A2330}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -190,6 +192,20 @@ Global
 		{E169FB3E-0CD7-446B-BCC2-D102AFFD5806}.Release|x64.Build.0 = Release|x64
 		{E169FB3E-0CD7-446B-BCC2-D102AFFD5806}.Release|x86.ActiveCfg = Release|Win32
 		{E169FB3E-0CD7-446B-BCC2-D102AFFD5806}.Release|x86.Build.0 = Release|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|ARM.ActiveCfg = Debug|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|x64.ActiveCfg = Debug|x64
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|x64.Build.0 = Debug|x64
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|x86.ActiveCfg = Debug|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Debug|x86.Build.0 = Debug|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|Any CPU.ActiveCfg = Release|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|ARM.ActiveCfg = Release|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|ARM64.ActiveCfg = Release|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|x64.ActiveCfg = Release|x64
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|x64.Build.0 = Release|x64
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|x86.ActiveCfg = Release|Win32
+		{AD305E3F-1D2A-476E-BA92-10B4317A2330}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

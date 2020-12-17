@@ -10,10 +10,19 @@ int main()
 
 	if (handle != 0)
 	{
-		std::cin.get();
-		const size_t size = 100;
+		const size_t size = 1600;
 		PUCHAR buffer = (UCHAR*)malloc(size);
-		std::cout << GetPacket(handle, buffer, size) << std::endl;
+		for (int j = 0; j < 100; j++)
+		{
+			int readcout = GetPacket(handle, buffer, size);
+
+			for (int i = 0; i < readcout; ++i)
+			{
+				printf("%02X-", buffer[i]);
+			}
+
+			printf("\n");
+		}
 
 		StopSniffing(handle);
 	}
