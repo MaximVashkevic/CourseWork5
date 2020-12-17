@@ -1,4 +1,3 @@
-
 #include <ntddk.h>
 #include <wdf.h>
 #define NDIS630
@@ -9,8 +8,6 @@
 #pragma comment(lib, "fwpkclnt.lib")
 
 #include "device.h"
-// TODO
-//#include "queue.h"
 
 DRIVER_INITIALIZE DriverEntry;
 EVT_WDF_DRIVER_UNLOAD SnifferDriverUnload;

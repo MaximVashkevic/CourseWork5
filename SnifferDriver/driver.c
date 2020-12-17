@@ -13,7 +13,6 @@ WDFFILEOBJECT GlobalFileObject = NULL;
 
 NTSTATUS AddCallout(GUID guid)
 {
-	// create callout
 	PDEVICE_OBJECT deviceObject;
 	FWPS_CALLOUT0 callout;
 	deviceObject = WdfDeviceWdmGetDeviceObject(device);
@@ -69,12 +68,10 @@ DriverEntry(
 		status = STATUS_INSUFFICIENT_RESOURCES;
 		goto Exit;
 	}
-	// Add NonPnpShutdown??? (1221) // нет в ndisprot
 
 	status = CreateDevice(driver, deviceInit);
 
 Exit:
-
 	return status;
 }
 
@@ -91,22 +88,19 @@ CreateDevice(
 	L"\\Device\\" SNIFFER_DEVICE_NAME);
 	DECLARE_CONST_UNICODE_STRING(dosDeviceName,
 	L"\\DosDevices\\" SNIFFER_DEVICE_NAME);
-	//WDF_OBJECT_ATTRIBUTES  attributes;
 	WDF_FILEOBJECT_CONFIG fileObjectConfig;
 	WDF_OBJECT_ATTRIBUTES objectAttributes;
 	WDF_IO_QUEUE_CONFIG queueConfig;
 	WDFQUEUE queue;
 
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: create device\n"));
-
 	UNREFERENCED_PARAMETER(Driver);
+
+	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: create device\n"));
 
 	WdfDeviceInitSetDeviceType(DeviceInit, FILE_DEVICE_NETWORK);
 	WdfDeviceInitSetExclusive(DeviceInit, TRUE);
 	WDF_IO_TYPE_CONFIG_INIT(&ioConfig);
 	ioConfig.ReadWriteIoType = WdfDeviceIoDirect;
-	// TODO: dont need it?
-	//ioConfig.DeviceControlIoType = WdfDeviceIoDirect;
 	WdfDeviceInitSetIoTypeEx(DeviceInit, &ioConfig);
 
 	status = WdfDeviceInitAssignName(DeviceInit, &deviceName);
@@ -124,12 +118,7 @@ CreateDevice(
 		SnifferEvtWdfFileClose,
 		SnifferEvtWdfFileCleanup);
 	WDF_OBJECT_ATTRIBUTES_INIT_CONTEXT_TYPE(&objectAttributes, FILE_OBJECT_CONTEXT);
-	//objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
-	//objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-	//objectAttributes.EvtDestroyCallback = SnifferEvtWdfObjectContextDestroy;
 	WdfDeviceInitSetFileObjectConfig(DeviceInit, &fileObjectConfig, &objectAttributes);
-	//WdfDeviceInitSetIoInCallerContextCallback(DeviceInit,
-	//    SnifferEvtWdfIoInCallerContext);
 	WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
 	status = WdfDeviceCreate(&DeviceInit, &objectAttributes, &device);
 	if (!NT_SUCCESS(status))
@@ -145,11 +134,6 @@ CreateDevice(
 	queueConfig.EvtIoRead = SnifferEvtWdfIoQueueIoRead;
 	queueConfig.EvtIoWrite = NULL;
 	queueConfig.EvtIoDeviceControl = NULL;
-	//queueConfig.EvtIoDeviceControl = SnifferEvtWdfIoQueueIoDeviceControl;
-	//WDF_OBJECT_ATTRIBUTES_INIT(&objectAttributes);
-	//objectAttributes.ExecutionLevel = WdfExecutionLevelPassive;
-	//objectAttributes.SynchronizationScope = WdfSynchronizationScopeNone;
-	//status = WdfIoQueueCreate(device, &queueConfig, &objectAttributes, &queue);
 	status = WdfIoQueueCreate(device, &queueConfig, WDF_NO_OBJECT_ATTRIBUTES, &queue);
 	if (!NT_SUCCESS(status))
 	{
@@ -174,8 +158,6 @@ CreateDevice(
 	}
 	status = AddCallout(MAC_OUT_CALLOUT_GUID);
 	status = AddCallout(MAC_IN_CALLOUT_GUID);
-	//AddCallout(MAC_OUT_CALLOUT_GUID);
-	//AddCallout(MAC_OUT_CALLOUT_GUID);
 
 	if (!NT_SUCCESS(status))
 	{
@@ -185,8 +167,6 @@ CreateDevice(
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: finished create device (+queue, +callout)\n"));
 
-
-
 Cleanup:
 	if (DeviceInit != NULL)
 	{
@@ -195,8 +175,6 @@ Cleanup:
 
 	return status;
 }
-
-
 
 void SnifferDriverUnload(
 	WDFDRIVER Driver
@@ -218,64 +196,9 @@ void SnifferDriverUnload(
 
 NTSTATUS NotifyFn(IN FWPS_CALLOUT_NOTIFY_TYPE notifyType, IN const GUID* filterKey, IN const FWPS_FILTER0* filter)
 {
-	PFILTER_CONTEXT context;
-	P_FILE_OBJECT_CONTEXT fileObjectContext;
-	KLOCK_QUEUE_HANDLE	lockHandle;
-	GUID emptyGuid = { 0 };
+	UNREFERENCED_PARAMETER(notifyType);
+	UNREFERENCED_PARAMETER(filterKey);
+	UNREFERENCED_PARAMETER(filter);
 
-
-	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: notify\n"));
-
-	switch (notifyType)
-	{
-	case FWPS_CALLOUT_NOTIFY_ADD_FILTER:
-	{
-		context = (PFILTER_CONTEXT)ExAllocatePoolWithTag(NonPagedPool, sizeof(FILTER_CONTEXT), FILTER_CONTEXT_TAG);
-		if (context == NULL)
-		{
-			return STATUS_INSUFFICIENT_RESOURCES;
-		}
-
-		RtlZeroMemory(context, sizeof(FILTER_CONTEXT));
-
-		if (GlobalFileObject != NULL)
-		{
-			fileObjectContext = GetFileObjectContext(GlobalFileObject);
-			KeAcquireInStackQueuedSpinLock(&(fileObjectContext->lock), &lockHandle);
-			if (fileObjectContext->filterCount >= MAX_FILTER_COUNT)
-			{
-				KeReleaseInStackQueuedSpinLock(&lockHandle);
-				return STATUS_INSUFFICIENT_RESOURCES;
-			}
-
-			context->guidId = fileObjectContext->filterCount;
-			fileObjectContext->filters[fileObjectContext->filterCount] = *filterKey;
-			fileObjectContext->filterCount++;
-
-			KeReleaseInStackQueuedSpinLock(&lockHandle);
-			((FWPS_FILTER0*)filter)->context = (UINT64)context;
-		}
-		break;
-	}
-	case FWPS_CALLOUT_NOTIFY_DELETE_FILTER:
-	{
-		context = (PFILTER_CONTEXT)filter->context;
-		if (context)
-		{
-			if (GlobalFileObject != NULL)
-			{
-				fileObjectContext = GetFileObjectContext(GlobalFileObject);
-				KeAcquireInStackQueuedSpinLock(&(fileObjectContext->lock), &lockHandle);
-
-				fileObjectContext->filters[context->guidId] = emptyGuid;
-
-				KeReleaseInStackQueuedSpinLock(&lockHandle);
-			}
-
-			ExFreePoolWithTag(context, FILTER_CONTEXT_TAG);
-		}
-		break;
-	}
-	}
 	return STATUS_SUCCESS;
 }

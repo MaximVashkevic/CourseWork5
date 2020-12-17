@@ -7,10 +7,6 @@
 #define SNIFFER_TAG 'finS'
 #define FILTER_CONTEXT_TAG 'tliF'
 
-typedef struct FILTER_CONTEXT_ {
-	int guidId;
-} FILTER_CONTEXT, * PFILTER_CONTEXT;
-
 typedef struct _FILE_OBJECT_CONTEXT
 {
 	WDFQUEUE                ReadQueue;
@@ -18,21 +14,10 @@ typedef struct _FILE_OBJECT_CONTEXT
 	LIST_ENTRY              RecvNetBufListQueue;
 	ULONG                   RecvNetBufListCount;
 	KSPIN_LOCK              lock;
-
-	GUID					filters[2];
-	int						filterCount;
 } FILE_OBJECT_CONTEXT, * P_FILE_OBJECT_CONTEXT;
 
 
-// generate function for access to device context
 WDF_DECLARE_CONTEXT_TYPE_WITH_NAME(FILE_OBJECT_CONTEXT, GetFileObjectContext)
-
-// TODO: remove?
-typedef struct
-{
-	UINT64 address;       // buffer address
-	UINT64 length;        // buffer length
-} RECEIVE_IOCTL, * PRECEIVE_IOCTL;
 
 typedef struct _PACKET
 {
@@ -41,11 +26,6 @@ typedef struct _PACKET
 	SIZE_T data;
 
 } PACKET, *PPACKET;
-
-//NTSTATUS
-//SnifferDeviceCreate(
-//    PWDFDEVICE_INIT DeviceInit
-//);
 
 EVT_WDF_DEVICE_FILE_CREATE SnifferEvtWdfDeviceFileCreate;
 EVT_WDF_FILE_CLOSE SnifferEvtWdfFileClose;
@@ -74,9 +54,6 @@ NotifyFn(
 );
 
 void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext);
+void SnifferFree(PVOID pointer);
 
 extern WDFFILEOBJECT GlobalFileObject;
-
-// TODO: remove?
-#define IOCTL_SNIFFER_RECV                                                \
-    CTL_CODE(FILE_DEVICE_NETWORK, 0x900, METHOD_OUT_DIRECT, FILE_READ_DATA)

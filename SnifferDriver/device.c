@@ -1,25 +1,5 @@
 #include "driver.h"
 
-// specify code sections for functions
-
-//#ifdef ALLOC_PRAGMA
-//#pragma alloc_text (PAGE, SnifferDeviceCreate)
-//#endif
-//
-//NTSTATUS SnifferDeviceCreate(PWDFDEVICE_INIT DeviceInit)
-//{
-//    WDF_OBJECT_ATTRIBUTES   deviceAttributes;
-//    P_FILE_OBJECT_CONTEXT fileObjectContext;
-//    WDF_PNPPOWER_EVENT_CALLBACKS    pnpPowerCallbacks;
-//    WDFDEVICE device;
-//    NTSTATUS status;
-//
-//    PAGED_CODE();
-//}
-
-void SnifferFree(PVOID pointer);
-
-
 void SnifferEvtWdfDeviceFileCreate(
 	WDFDEVICE Device,
 	WDFREQUEST Request,
@@ -54,10 +34,8 @@ void SnifferEvtWdfDeviceFileCreate(
 
 	InitializeListHead(&fileObjectContext->RecvNetBufListQueue);
 
-	// TODO: reference?
 	GlobalFileObject = FileObject;
 
-	// 
 Exit:
 	WdfRequestComplete(Request, status);
 }
@@ -68,7 +46,6 @@ void SnifferEvtWdfFileClose(
 {
 	UNREFERENCED_PARAMETER(FileObject);
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: closing device\n"));
-
 }
 
 void SnifferEvtWdfFileCleanup(
@@ -76,45 +53,16 @@ void SnifferEvtWdfFileCleanup(
 )
 {
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
-	KLOCK_QUEUE_HANDLE lockHandle;
 	GlobalFileObject = NULL;
-	GUID emptyGuid = { 0 };
 
 	fileObjectContext = GetFileObjectContext(FileObject);
-	// TODO stop classify, cleanup
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: file cleanup\n"));
 
 	WdfIoQueuePurgeSynchronously(fileObjectContext->ReadQueue); // не блокировать
 
 	WdfObjectDelete(fileObjectContext->ReadQueue);
 
-	// TODO: блокировать?
 	FreeReceiveQueue(fileObjectContext);
-
-	KeAcquireInStackQueuedSpinLock(&fileObjectContext->lock, &lockHandle);
-
-	HANDLE engineHandle = NULL;
-	DWORD result = 0;
-	result = FwpmEngineOpen0(
-		NULL,
-		RPC_C_AUTHN_WINNT,
-		NULL,
-		NULL,
-		&engineHandle
-	);
-	if (result == STATUS_SUCCESS)
-	{
-		for (int i = 0; i < MAX_FILTER_COUNT; ++i)
-		{
-			if (!IsEqualGUID(&fileObjectContext->filters[i], &emptyGuid))
-			{
-				result = FwpmFilterDeleteByKey(engineHandle, &fileObjectContext->filters[i]);
-			}
-		}
-	}
-
-	FwpmEngineClose(engineHandle);
-	KeReleaseInStackQueuedSpinLock(&lockHandle);
 }
 
 void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
@@ -136,10 +84,8 @@ void FreeReceiveQueue(P_FILE_OBJECT_CONTEXT objectContext)
 	}
 
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
-
 }
 
-// TODO
 void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 {
 	WDFREQUEST          request;
@@ -169,9 +115,6 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 			break;
 		}
 
-		/*WdfRequestCompleteWithInformation(request, STATUS_SUCCESS, 0);
-		return;*/
-
 		status = WdfRequestRetrieveOutputWdmMdl(request, &pMdl);
 		if (!NT_SUCCESS(status))
 		{
@@ -190,7 +133,6 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 		bufferLength = MmGetMdlByteCount(pMdl);
 
 		pReceiveNetBufferListEntry = RemoveHeadList(&objectContext->RecvNetBufListQueue);
-		//RemoveEntryList(pReceiveNetBufferListEntry);
 		(objectContext->RecvNetBufListCount)--;
 
 		pPacket = (PPACKET)pReceiveNetBufferListEntry;
@@ -210,18 +152,12 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 			SnifferFree(pReceiveNetBufferListEntry);
 		}
 
-
 		WdfRequestCompleteWithInformation(request, status, copiedLength);
-
 	}
 
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
-
-	// TODO: replace
-
 }
 
-// remove?
 void SnifferEvtWdfObjectContextDestroy(
 	WDFOBJECT Object
 )
@@ -241,18 +177,13 @@ void SnifferEvtWdfIoQueueIoRead(
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: ioQueueIoRead (forwarding to readQueue)\n"));
 
-	// forward request to deviceObject queue
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
 	WDFFILEOBJECT fileObject;
 	NTSTATUS status = STATUS_SUCCESS;
 
-
 	fileObject = WdfRequestGetFileObject(Request);
 	fileObjectContext = GetFileObjectContext(fileObject);
 
-
-	//TODO!!!!!
-	// TODO: не блокируют?
 	status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
 
 	if (!NT_SUCCESS(status))
@@ -311,9 +242,6 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 	PNET_BUFFER_LIST rawData;
 	BOOL captured = FALSE;
 
-	UCHAR buffer[14];
-	UCHAR* header;
-
 	UNREFERENCED_PARAMETER(flowContext);
 	UNREFERENCED_PARAMETER(filter);
 	UNREFERENCED_PARAMETER(inMetaValues);
@@ -344,20 +272,9 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 			{
 
 				ULONG size = NET_BUFFER_DATA_LENGTH(pNB);
-				header = NdisGetDataBuffer(pNB, sizeof(buffer), buffer, 1, 0);
-				if (!header)
-				{
-					continue;
-				}
-
-				KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
-					"Size: %10i dest MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n src MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n",
-					size,
-					header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7], header[8], header[9], header[10], header[11]));
 
 				if (size < MAX_PACKET_LENGTH)
 				{
-					// TODO: check - from size
 					PVOID pPacket = SnifferNonPagedMalloc(sizeof(PACKET) - sizeof(SIZE_T) + size);
 
 					((PPACKET)pPacket)->length = size;
@@ -370,74 +287,16 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 							pEntry);
 						(fileObjectContext->RecvNetBufListCount)++;
 						captured = TRUE;
-						// enqueue
 					}
 				}
 			}
 		}
 	}
 
-	// TODO: replace?
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
 
 	if (captured)
 	{
-		// TODO: где вызывать?
 		ProcessReadRequest(fileObjectContext);
 	}
-
 }
-
-//void SnifferEvtWdfIoQueueIoDeviceControl(
-//	WDFQUEUE Queue,
-//	WDFREQUEST Request,
-//	size_t OutputBufferLength,
-//	size_t InputBufferLength,
-//	ULONG IoControlCode
-//)
-//{
-//	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: device control\n"));
-//}
-
-// TODO: remove?
-//void SnifferEvtWdfIoInCallerContext(
-//	WDFDEVICE Device,
-//	WDFREQUEST Request
-//)
-//{
-//	PCHAR inbuf;
-//	size_t inbuflen;
-//	WDF_REQUEST_PARAMETERS params;
-//	WDFMEMORY memobj;
-//	WDF_OBJECT_ATTRIBUTES attributes;
-//	NTSTATUS status;
-//
-//	WDF_REQUEST_PARAMETERS_INIT(&params);
-//	WdfRequestGetParameters(Request, &params);
-//
-//	if (params.Type != WdfRequestTypeDeviceControl)
-//	{
-//		status = WdfDeviceEnqueueRequest(Device, Request);
-//		goto Cleanup;
-//	}
-//
-//	status = WdfRequestRetrieveInputBuffer(Request, 0, &inbuf, &inbuflen);
-//	if (!NT_SUCCESS(status))
-//	{
-//		goto Cleanup;
-//	}
-//
-//	if (inbuflen < sizeof(RECEIVE_IOCTL))
-//	{
-//		goto Cleanup;
-//	}
-//
-//	status = WdfDeviceEnqueueRequest(Device, Request);
-//
-//Cleanup:
-//
-//	if (!NT_SUCCESS(status))
-//	{
-//		WdfRequestComplete(Request, status);
-//	}
-//}
