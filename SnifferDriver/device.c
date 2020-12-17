@@ -122,7 +122,10 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 	PMDL                pMdl;
 	PUCHAR              pDst;
 	PLIST_ENTRY         pReceiveNetBufferListEntry;
-
+	ULONG				bufferLength;
+	ULONG				copiedLength = 0;
+	PPACKET				pPacket;
+	PVOID				pPacketData;
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: processing read\n"));
 
@@ -140,10 +143,10 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 			break;
 		}
 
-		WdfRequestCompleteWithInformation(request, STATUS_SUCCESS, 0);
-		return;
+		/*WdfRequestCompleteWithInformation(request, STATUS_SUCCESS, 0);
+		return;*/
 
-		/*status = WdfRequestRetrieveInputWdmMdl(request, &pMdl);
+		status = WdfRequestRetrieveOutputWdmMdl(request, &pMdl);
 		if (!NT_SUCCESS(status))
 		{
 			KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: processing read: can't get mdl\n"));
@@ -158,11 +161,30 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 			break;
 		}
 
-		pReceiveNetBufferListEntry = objectContext->RecvNetBufListQueue.Flink;
-		RemoveEntryList(pReceiveNetBufferListEntry);
-		(objectContext->RecvNetBufListCount)--;*/
+		bufferLength = MmGetMdlByteCount(pMdl);
 
-		//pNBL = 
+		pReceiveNetBufferListEntry = RemoveHeadList(&objectContext->RecvNetBufListQueue);
+		//RemoveEntryList(pReceiveNetBufferListEntry);
+		(objectContext->RecvNetBufListCount)--;
+
+		pPacket = (PPACKET)pReceiveNetBufferListEntry;
+		pPacketData = &(pPacket->data);
+
+		if (bufferLength < pPacket->length)
+		{
+			status = STATUS_BUFFER_TOO_SMALL;
+			InsertHeadList(&objectContext->RecvNetBufListQueue, pReceiveNetBufferListEntry);
+		}
+		else
+		{
+			RtlCopyMemory(pDst, pPacketData, pPacket->length);
+			copiedLength = pPacket->length;
+			status = STATUS_SUCCESS;
+		}
+
+
+		WdfRequestCompleteWithInformation(request, status, copiedLength);
+
 	}
 
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
@@ -326,7 +348,7 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
 
 	// TODO: где вызывать?
-	//ProcessReadRequest(fileObjectContext);
+	ProcessReadRequest(fileObjectContext);
 
 	classifyOut->actionType = FWP_ACTION_CONTINUE;
 }
