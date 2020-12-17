@@ -11,6 +11,7 @@ public:
 	virtual std::wstring Source() const = 0;
 	virtual std::wstring Destination() const = 0;
 	virtual SIZE_T Length() const = 0;
+	virtual std::wstring Bytes() const = 0;
 	virtual ~BasePacket() = default;
 };
 

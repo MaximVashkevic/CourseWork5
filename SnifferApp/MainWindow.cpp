@@ -41,7 +41,11 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_PACKET:
 	{
-		HandlePacket(*static_cast<std::shared_ptr<BasePacket>*>((void*)lParam));
+		HandlePacket((BasePacket*)lParam);
+	}
+	case WM_INFO:
+	{
+		HandleInfo((BasePacket*)lParam);
 	}
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -98,13 +102,10 @@ void MainWindow::HandleCommand(WPARAM wParam)
 		provider.StopCapture();
 		break;
 	}
-
-	default:
-		break;
 	}
 }
 
-void MainWindow::HandlePacket(std::shared_ptr<BasePacket> packet)
+void MainWindow::HandlePacket(BasePacket* packet)
 {
 	std::wstringstream s;
 
@@ -113,4 +114,10 @@ void MainWindow::HandlePacket(std::shared_ptr<BasePacket> packet)
 
 	if (hPacketList != nullptr)
 		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(s.str().c_str()));
+}
+
+void MainWindow::HandleInfo(BasePacket* packet)
+{
+	if (hPacketList != nullptr)
+		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(packet->Bytes().c_str()));
 }
