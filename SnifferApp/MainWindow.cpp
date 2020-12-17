@@ -43,6 +43,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		HandlePacket((BasePacket*)lParam);
 	}
+	case WM_INFO:
+	{
+		HandleInfo((BasePacket*)lParam);
+	}
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
@@ -98,9 +102,6 @@ void MainWindow::HandleCommand(WPARAM wParam)
 		provider.StopCapture();
 		break;
 	}
-
-	default:
-		break;
 	}
 }
 
@@ -113,4 +114,10 @@ void MainWindow::HandlePacket(BasePacket* packet)
 
 	if (hPacketList != nullptr)
 		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(s.str().c_str()));
+}
+
+void MainWindow::HandleInfo(BasePacket* packet)
+{
+	if (hPacketList != nullptr)
+		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(packet->Bytes().c_str()));
 }

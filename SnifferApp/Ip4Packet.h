@@ -9,7 +9,7 @@ inline std::wstring GetIpv4(PBYTE address);
 
 class Ip4Packet : public BasePacket
 {
-public: 
+public:
 	static const UINT16 Type = 0x0800;
 
 	explicit Ip4Packet(PUINT8 data)
@@ -25,7 +25,7 @@ public:
 	}
 
 	// Inherited via BasePacket
-	 std::wstring Protocol() const final
+	std::wstring Protocol() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -36,7 +36,7 @@ public:
 			return nextLayerData->Destination();
 		}
 	}
-	 std::wstring Source() const final
+	std::wstring Source() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -48,7 +48,7 @@ public:
 		}
 	}
 
-	 std::wstring Destination() const final
+	std::wstring Destination() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -60,9 +60,14 @@ public:
 		}
 	}
 
-	 SIZE_T Length() const final
+	SIZE_T Length() const final
 	{
 		return 0;
+	}
+
+	std::wstring Bytes() const final
+	{
+		return std::wstring();
 	}
 
 private:

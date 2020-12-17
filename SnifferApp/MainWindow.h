@@ -19,6 +19,7 @@ private:
 	void SetupMenu();
 	void HandleCommand(WPARAM wParam);
 	void HandlePacket(BasePacket*);
+	void HandleInfo(BasePacket*);
 	PacketProvider provider;
 	HMENU hMenu;
 	HWND hPacketList;

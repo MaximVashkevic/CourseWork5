@@ -35,8 +35,13 @@ public:
         this->destination = GetMac(header->pDestinationAddress);
 
         this->length = length;
+        this->pData = data;
 
         nextLayerData = NetworkLayerFactory::GetPacket(ntohs(header->type), data + sizeof(ETHERNET_II_HEADER));
+    }
+    ~EthernetPacket()
+    {
+        delete[] pData;
     }
 
 
@@ -45,6 +50,7 @@ private:
     std::shared_ptr<BasePacket> nextLayerData;
     std::wstring source;
     std::wstring destination;
+    PUINT8 pData;
 
     // Inherited via BasePacket
     std::wstring Protocol() const final
@@ -85,6 +91,27 @@ private:
     SIZE_T Length() const final
     {
         return length;
+    }
+
+    std::wstring Bytes() const
+    {
+        std::wstringstream s;
+
+        for (int i = 0; i < length; ++i)
+        {
+            if (i != 0 && i % 16 == 0)
+            {
+                s << std::endl;
+            }
+
+            if (i % 16 == 0)
+            {
+                s << std::setfill(L'0') << std::setw(4) << std::hex << i << L':';
+            }
+            s << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
+        }
+
+        return s.str();
     }
 
 };
