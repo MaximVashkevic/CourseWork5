@@ -119,10 +119,10 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 	WDFREQUEST          request;
 	NTSTATUS            status = STATUS_UNSUCCESSFUL;
 	KLOCK_QUEUE_HANDLE	lockHandle;
-	//PMDL                pMdl;
-	//PUCHAR              pDst;
-	//PLIST_ENTRY         pReceiveNetBufferListEntry;
-	//PNET_BUFFER_LIST    pNBL;
+	PMDL                pMdl;
+	PUCHAR              pDst;
+	PLIST_ENTRY         pReceiveNetBufferListEntry;
+
 
 	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL, "Sniffer: processing read\n"));
 
@@ -200,33 +200,20 @@ void SnifferEvtWdfIoQueueIoRead(
 	fileObject = WdfRequestGetFileObject(Request);
 	fileObjectContext = GetFileObjectContext(fileObject);
 
-	/******
-	*
-	* TODO
-	*
-	*/
-	WdfRequestCompleteWithInformation(Request, status, 0);
-	return;
-
-
-	/*
-	*
-	*
-	* */
 
 	//TODO!!!!!
-//// TODO: не блокируют?
-//status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
+	// TODO: не блокируют?
+	status = WdfRequestForwardToIoQueue(Request, fileObjectContext->ReadQueue);
 
-//if (!NT_SUCCESS(status))
-//{
-//	KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
-//	WdfRequestCompleteWithInformation(Request, status, 0);
-//}
+	if (!NT_SUCCESS(status))
+	{
+		KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_ERROR_LEVEL, "Sniffer: can't forward read request\n"));
+		WdfRequestCompleteWithInformation(Request, status, 0);
+	}
 
-//ProcessReadRequest(fileObjectContext);
+	ProcessReadRequest(fileObjectContext);
 
-//return;
+	return;
 }
 
 PVOID SnifferNonPagedMalloc(SIZE_T size)
@@ -310,9 +297,9 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 				}
 
 				KdPrintEx((DPFLTR_IHVDRIVER_ID, DPFLTR_INFO_LEVEL,
-					"Size: %10i MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n",
+					"Size: %10i dest MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n src MAC address: %02x-%02x-%02x-%02x-%02x-%02x\n",
 					size,
-					header[0], header[1], header[2], header[3], header[4], header[5]));
+					header[0], header[1], header[2], header[3], header[4], header[5], header[6], header[7], header[8], header[9], header[10], header[11]));
 
 				if (size < MAX_PACKET_LENGTH)
 				{
