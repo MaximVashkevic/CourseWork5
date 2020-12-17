@@ -42,10 +42,12 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_PACKET:
 	{
 		HandlePacket((BasePacket*)lParam);
+		break;
 	}
 	case WM_INFO:
 	{
 		HandleInfo((BasePacket*)lParam);
+		break;
 	}
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
