@@ -19,7 +19,7 @@ public:
 		}
 		else
 		{
-			pThis = (DerivedType*)GetWindowLong(hWnd, GWLP_USERDATA);
+			pThis = (DerivedType*)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 		}
 		if (pThis)
 		{

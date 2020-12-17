@@ -118,7 +118,7 @@
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -141,11 +141,24 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="PacketProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="BasePacket.h" />
+    <ClInclude Include="EthernetPacket.h" />
+    <ClInclude Include="Headers.h" />
+    <ClInclude Include="Ip4Packet.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="NetworkLayerFactory.h" />
+    <ClInclude Include="PacketProvider.h" />
+    <ClInclude Include="TransportLayerFactory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SnifferLib\SnifferLib.vcxproj">
+      <Project>{c66f2a8a-f286-499e-a0fd-24c1ad954aa8}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

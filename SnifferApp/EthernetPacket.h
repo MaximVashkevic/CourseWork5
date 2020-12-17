@@ -1,0 +1,93 @@
+#pragma once
+#include "BasePacket.h"
+#include <memory>
+#include "NetworkLayerFactory.h"
+#include <stdio.h>
+#include <sstream>
+#include <iomanip>
+
+inline std::wstring GetMac(const PUINT8 pData);
+
+class EthernetPacket :
+    public BasePacket
+{
+public:
+    EthernetPacket(SIZE_T length, PUINT8 data)
+        : BasePacket()
+    {
+        PETHERNET_II_HEADER header = (PETHERNET_II_HEADER)data;
+
+        this->source = GetMac(header->pSourceAddress);
+        this->destination = GetMac(header->pDestinationAddress);
+
+        this->length = length;
+
+        nextLayerData = NetworkLayerFactory::GetPacket(header->type, data + sizeof(ETHERNET_II_HEADER));
+    }
+
+
+private:
+    SIZE_T length;
+    std::shared_ptr<BasePacket> nextLayerData;
+    std::wstring source;
+    std::wstring destination;
+
+    // Inherited via BasePacket
+    virtual std::wstring Protocol() const override
+    {
+        if (nextLayerData == nullptr)
+        {
+            return L"Ethernet";
+        }
+        else
+        {
+            return nextLayerData->Destination();
+        }
+    }
+
+    virtual std::wstring Source() const override {
+        if (nextLayerData == nullptr)
+        {
+            return source;
+        }
+        else
+        {
+            return nextLayerData->Destination();
+        }
+    }
+
+    virtual std::wstring Destination() const override
+    {
+        if (nextLayerData == nullptr)
+        {
+            return destination;
+        }
+        else
+        {
+            return nextLayerData->Destination();
+        }
+    }
+
+    virtual SIZE_T Length() const final
+    {
+        return length;
+    }
+
+};
+
+std::wstring GetMac(const PUINT8 pData)
+{
+    std::wstringstream s;
+
+    for (int i = 0; i < MAC_LENGTH; ++i)
+    {
+        s << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
+        if (i != MAC_LENGTH - 1)
+        {
+            s << L':';
+        }
+    }
+
+    return s.str();
+}
+
