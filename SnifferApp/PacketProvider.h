@@ -48,16 +48,8 @@ public:
 
 	void StopCapture()
 	{
-		if (capturing)
-		{
-			EnterCriticalSection(&criticalSection);
-			if (capturing)
-			{
-				StopSniffing(captureHandle);
-				capturing = false;
-			}
-			LeaveCriticalSection(&criticalSection);
-		}
+		HANDLE threadHandle = CreateThread(nullptr, 0, StopCaptureThread, this, 0, nullptr);
+		CloseHandle(threadHandle);
 	}
 
 	void SelectPacket(int id)
@@ -98,6 +90,24 @@ private:
 				{
 					pProvider->OnPacketCaptured(pProvider->captureObserver, pPacket);
 				}
+			}
+			LeaveCriticalSection(&pProvider->criticalSection);
+		}
+
+		return 0;
+	}
+
+	static DWORD WINAPI StopCaptureThread(PVOID parameter)
+	{
+		PacketProvider* pProvider = (PacketProvider*)parameter;
+
+		if (pProvider->capturing)
+		{
+			EnterCriticalSection(&pProvider->criticalSection);
+			if (pProvider->capturing)
+			{
+				StopSniffing(pProvider->captureHandle);
+				pProvider->capturing = false;
 			}
 			LeaveCriticalSection(&pProvider->criticalSection);
 		}
