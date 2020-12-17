@@ -50,8 +50,8 @@ public:
 			EnterCriticalSection(&criticalSection);
 			if (capturing)
 			{
-				captureHandle = StartSniffing();
-				capturing = true;
+				StopSniffing(captureHandle);
+				capturing = false;
 			}
 			LeaveCriticalSection(&criticalSection);
 		}

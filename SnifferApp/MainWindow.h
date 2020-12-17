@@ -18,7 +18,7 @@ private:
 	void SetupPacketList();
 	void SetupMenu();
 	void HandleCommand(WPARAM wParam);
-	void HandlePacket(std::shared_ptr<BasePacket>);
+	void HandlePacket(BasePacket*);
 	PacketProvider provider;
 	HMENU hMenu;
 	HWND hPacketList;

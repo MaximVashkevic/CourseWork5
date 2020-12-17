@@ -74,7 +74,7 @@ private:
 std::wstring GetIpv4(PBYTE pAddress)
 {
 	IP_ADDRESS address;
-	address.address = ntohl(*((UINT32*)pAddress));
+	address.address = (*((UINT32*)pAddress));
 
 	std::wstringstream s;
 	for (int i = 0; i < IPV4_LENGTH; ++i)

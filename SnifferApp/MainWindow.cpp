@@ -41,7 +41,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_PACKET:
 	{
-		HandlePacket(*static_cast<std::shared_ptr<BasePacket>*>((void*)lParam));
+		HandlePacket((BasePacket*)lParam);
 	}
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -104,7 +104,7 @@ void MainWindow::HandleCommand(WPARAM wParam)
 	}
 }
 
-void MainWindow::HandlePacket(std::shared_ptr<BasePacket> packet)
+void MainWindow::HandlePacket(BasePacket* packet)
 {
 	std::wstringstream s;
 

@@ -36,7 +36,7 @@ public:
 
         this->length = length;
 
-        nextLayerData = NetworkLayerFactory::GetPacket(header->type, data + sizeof(ETHERNET_II_HEADER));
+        nextLayerData = NetworkLayerFactory::GetPacket(ntohs(header->type), data + sizeof(ETHERNET_II_HEADER));
     }
 
 
@@ -55,7 +55,7 @@ private:
         }
         else
         {
-            return nextLayerData->Destination();
+            return nextLayerData->Protocol();
         }
     }
 
@@ -66,7 +66,7 @@ private:
         }
         else
         {
-            return nextLayerData->Destination();
+            return nextLayerData->Source();
         }
     }
 
