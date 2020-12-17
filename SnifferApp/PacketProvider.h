@@ -10,13 +10,13 @@
 class PacketProvider {
 
 public:
-	void SetOnCapture(void* object, void (*func)(void* object, std::shared_ptr<BasePacket>*))
+	void SetOnCapture(void* object, void (*func)(void* object, BasePacket* packet))
 	{
 		captureObserver = object;
 		OnPacketCaptured = func;
 	}
 
-	void SetOnSelect(void* object, void (*func)(void* object, std::shared_ptr<BasePacket>*))
+	void SetOnSelect(void* object, void (*func)(void* object, BasePacket* packet))
 	{
 		selectObserver = object;
 		OnPacketSelected = func;
@@ -59,7 +59,7 @@ public:
 
 	void SelectPacket(int id)
 	{
-		OnPacketSelected(selectObserver, &packets[id]);
+		OnPacketSelected(selectObserver, packets[id]);
 	}
 
 	~PacketProvider()
@@ -70,6 +70,11 @@ public:
 			StopCapture();
 		}
 		LeaveCriticalSection(&criticalSection);
+
+		for (auto pPacket : packets)
+		{
+			delete pPacket;
+		}
 
 		DeleteCriticalSection(&criticalSection);
 	}
@@ -84,11 +89,11 @@ private:
 			{
 				UINT8* pBuffer = new UINT8[MAX_CAPTURE_SIZE];
 				int capturedLength = GetPacket(pProvider->captureHandle, pBuffer, MAX_CAPTURE_SIZE);
-				std::shared_ptr<BasePacket> pPacket = std::make_shared<EthernetPacket>(capturedLength, pBuffer);
+				EthernetPacket* pPacket = new EthernetPacket(capturedLength, pBuffer);
 				pProvider->packets.push_back(pPacket);
 				if (pProvider->OnPacketCaptured)
 				{
-					pProvider->OnPacketCaptured(pProvider->captureObserver, &pPacket);
+					pProvider->OnPacketCaptured(pProvider->captureObserver, pPacket);
 				}
 			}
 			LeaveCriticalSection(&pProvider->criticalSection);
@@ -98,12 +103,12 @@ private:
 	}
 
 	bool capturing = false;
-	std::vector<std::shared_ptr<BasePacket>> packets;
+	std::vector<BasePacket*> packets;
 	CRITICAL_SECTION criticalSection;
 	HANDLE captureHandle;
 
-	void (*OnPacketCaptured)(void* object, std::shared_ptr<BasePacket>*);
+	void (*OnPacketCaptured)(void* object, BasePacket*);
 	void* captureObserver;
-	void (*OnPacketSelected)(void* object, std::shared_ptr<BasePacket>*);
+	void (*OnPacketSelected)(void* object, BasePacket*);
 	void* selectObserver;
 };

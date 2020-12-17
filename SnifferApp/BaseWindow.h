@@ -40,8 +40,8 @@ public:
 		int y = CW_USEDEFAULT,
 		int nWidth = CW_USEDEFAULT,
 		int nHeight = CW_USEDEFAULT,
-		HWND hWndParent = 0,
-		HMENU hMenu = 0)
+		HWND hWndParent = NULL,
+		HMENU hMenu = NULL)
 	{
 		WNDCLASS wc = {};
 		wc.lpfnWndProc = DerivedType::WindowProc;
@@ -60,6 +60,5 @@ public:
 protected:
 	virtual PCWSTR ClassName() const = 0;
 	virtual LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam) = 0;
-
 	HWND hwnd;
 };

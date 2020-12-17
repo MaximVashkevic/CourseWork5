@@ -17,7 +17,7 @@ bool GetDriverPath(LPWSTR driverPath)
 	size_t length;
 	size_t driverNameLength = sizeof(DRIVER_NAME) / sizeof(WCHAR);
 
-	length = GetModuleFileName(NULL, driverPath, MAX_PATH);
+	length = GetModuleFileName(nullptr, driverPath, MAX_PATH);
 
 	if (length == 0)
 	{
@@ -43,22 +43,22 @@ bool GetDriverPath(LPWSTR driverPath)
 
 bool InstallDriver()
 {
-	SC_HANDLE managerHandle = NULL;
-	SC_HANDLE serviceHandle = NULL;
+	SC_HANDLE managerHandle = nullptr;
+	SC_HANDLE serviceHandle = nullptr;
 	WCHAR driverPath[MAX_PATH + 1];
 
 	bool result = false;
 
 	do
 	{
-		managerHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
-		if (managerHandle == NULL)
+		managerHandle = OpenSCManager(nullptr, nullptr, SC_MANAGER_ALL_ACCESS);
+		if (managerHandle == nullptr)
 		{
 			break;
 		}
 
 		serviceHandle = OpenService(managerHandle, SNIFFER_DEVICE_NAME, SERVICE_ALL_ACCESS);
-		if (serviceHandle != NULL)
+		if (serviceHandle != nullptr)
 		{
 			// driver is already installed
 			break;
@@ -78,20 +78,20 @@ bool InstallDriver()
 			SERVICE_DEMAND_START,      // start type 
 			SERVICE_ERROR_NORMAL,      // error control type 
 			driverPath,                    // path to service's binary 
-			NULL,                      // no load ordering group 
-			NULL,                      // no tag identifier 
-			NULL,                      // no dependencies 
-			NULL,                      // LocalSystem account 
-			NULL);                     // no password 
-		if (serviceHandle == NULL && GetLastError() == ERROR_SERVICE_EXISTS)
+			nullptr,                      // no load ordering group 
+			nullptr,                      // no tag identifier 
+			nullptr,                      // no dependencies 
+			nullptr,                      // LocalSystem account 
+			nullptr);                     // no password 
+		if (serviceHandle == nullptr && GetLastError() == ERROR_SERVICE_EXISTS)
 		{
 			serviceHandle = OpenService(managerHandle, SNIFFER_DEVICE_NAME, SERVICE_ALL_ACCESS);
 		}
 	} while (false);
 
-	if (serviceHandle != NULL)
+	if (serviceHandle != nullptr)
 	{
-		result = StartService(serviceHandle, 0, NULL);
+		result = StartService(serviceHandle, 0, nullptr);
 		if (!result)
 		{
 			result = (GetLastError() == ERROR_SERVICE_ALREADY_RUNNING);
@@ -102,12 +102,12 @@ bool InstallDriver()
 		}
 	}
 
-	if (serviceHandle != NULL)
+	if (serviceHandle != nullptr)
 	{
 		CloseServiceHandle(serviceHandle);
 	}
 
-	if (managerHandle != NULL)
+	if (managerHandle != nullptr)
 	{
 		CloseServiceHandle(managerHandle);
 	}
@@ -126,18 +126,18 @@ DWORD AddFilter(HANDLE engineHandle, GUID layerGuid, GUID calloutGuid, GUID filt
 	filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
 	filter.action.calloutKey = calloutGuid;
 	//filter.providerKey = &(provider.providerKey);
-	filter.providerKey = NULL;
+	filter.providerKey = nullptr;
 	filter.weight.type = FWP_EMPTY;
 	filter.displayData.name = const_cast<PWCHAR>(L"Filter");
 
 	filter.numFilterConditions = 0;
-	return FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
+	return FwpmFilterAdd0(engineHandle, &filter, nullptr, nullptr);
 }
 
 HANDLE StartSniffing()
 {
-	HANDLE engineHandle = NULL;
-	HANDLE fileHandle = NULL;
+	HANDLE engineHandle = nullptr;
+	HANDLE fileHandle = nullptr;
 	DWORD result = ERROR_SUCCESS;
 	FWPM_SESSION0 session;
 	WCHAR PROVIDER_NAME[] = L"SnifferProvider";
@@ -148,9 +148,9 @@ HANDLE StartSniffing()
 	InstallDriver();
 
 	fileHandle = CreateFile(DEVICE_NAME,
-		GENERIC_READ, 0, NULL, OPEN_EXISTING,
+		GENERIC_READ, 0, nullptr, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, // | FILE_FLAG_OVERLAPPED (async IO?)
-		INVALID_HANDLE_VALUE); // NULL
+		INVALID_HANDLE_VALUE); // nullptr
 
 	if (fileHandle == INVALID_HANDLE_VALUE)
 	{
@@ -163,9 +163,9 @@ HANDLE StartSniffing()
 		session.txnWaitTimeoutInMSec = INFINITE;
 
 		result = FwpmEngineOpen0(
-			NULL,
+			nullptr,
 			RPC_C_AUTHN_WINNT,
-			NULL,
+			nullptr,
 			&session,
 			&engineHandle
 		);
@@ -189,7 +189,7 @@ HANDLE StartSniffing()
 		provider.flags = FWPM_PROVIDER_FLAG_PERSISTENT;
 		provider.displayData.name = PROVIDER_NAME;
 
-		result = FwpmProviderAdd0(engineHandle, &provider, NULL);
+		result = FwpmProviderAdd0(engineHandle, &provider, nullptr);
 
 		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 		{
@@ -204,7 +204,7 @@ HANDLE StartSniffing()
 		sublayer.weight = 0x8000;
 		sublayer.displayData.name = SUBLAYER_NAME;
 
-		result = FwpmSubLayerAdd0(engineHandle, &sublayer, NULL);
+		result = FwpmSubLayerAdd0(engineHandle, &sublayer, nullptr);
 		if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 		{
 			break;
@@ -242,7 +242,7 @@ HANDLE StartSniffing()
 
 		filter.filterCondition = filterConditions;
 
-		result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);*/
+		result = FwpmFilterAdd0(engineHandle, &filter, nullptr, nullptr);*/
 
 		FWPM_FILTER0 filter;
 		ZeroMemory(&filter, sizeof(filter));
@@ -256,12 +256,12 @@ HANDLE StartSniffing()
 		//filter.action.type = FWP_ACTION_CALLOUT_INSPECTION;
 		//filter.action.calloutKey = IP_CALLOUT_GUID;
 		////filter.providerKey = &(provider.providerKey);
-		//filter.providerKey = NULL;
+		//filter.providerKey = nullptr;
 		//filter.weight.type = FWP_EMPTY;
 		//filter.displayData.name = FILTER_NAME;
 
 		//filter.numFilterConditions = 0;
-		//result = FwpmFilterAdd0(engineHandle, &filter, NULL, NULL);
+		//result = FwpmFilterAdd0(engineHandle, &filter, nullptr, nullptr);
 		/*filter.numFilterConditions = 1;
 		ZeroMemory(filterConditions, sizeof(filterConditions));
 		filterConditions[0].fieldKey = FWPM_CONDITION_IP_REMOTE_PORT;
@@ -309,7 +309,7 @@ bool AddCallout(HANDLE engineHandle, GUID guid, GUID layer)
 	callout.applicableLayer = layer;
 	callout.displayData.name = CALLOUT_NAME;
 
-	DWORD result = FwpmCalloutAdd(engineHandle, &callout, NULL, NULL);
+	DWORD result = FwpmCalloutAdd(engineHandle, &callout, nullptr, nullptr);
 	if (!(result == FWP_E_ALREADY_EXISTS || result == ERROR_SUCCESS))
 	{
 		return false;
@@ -325,13 +325,13 @@ ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength)
 		buffer,
 		bufferLength,
 		&returned,
-		NULL);
+		nullptr);
 	return returned;
 }
 
 void StopSniffing(HANDLE handle)
 {
-	if (handle != NULL)
+	if (handle != nullptr)
 	{
 		CloseHandle(handle);
 	}

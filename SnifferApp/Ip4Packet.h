@@ -25,7 +25,7 @@ public:
 	}
 
 	// Inherited via BasePacket
-	virtual std::wstring Protocol() const override
+	 std::wstring Protocol() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -36,7 +36,7 @@ public:
 			return nextLayerData->Destination();
 		}
 	}
-	virtual std::wstring Source() const override
+	 std::wstring Source() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -48,7 +48,7 @@ public:
 		}
 	}
 
-	virtual std::wstring Destination() const override
+	 std::wstring Destination() const final
 	{
 		if (nextLayerData == nullptr)
 		{
@@ -60,7 +60,7 @@ public:
 		}
 	}
 
-	virtual SIZE_T Length() const override
+	 SIZE_T Length() const final
 	{
 		return 0;
 	}

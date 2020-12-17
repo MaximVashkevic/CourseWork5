@@ -4,14 +4,20 @@
 #include <sstream>
 #include <string>
 
-static void OnPacketCaptured(void* object, std::shared_ptr<BasePacket>* pPacket)
+static void OnPacketCaptured(void* object, BasePacket* pPacket)
 {
-	PostMessage((HWND)object, WM_PACKET, 0, (LPARAM)pPacket);
+	if (pPacket != NULL)
+	{
+		PostMessage((HWND)object, WM_PACKET, 0, (LPARAM)pPacket);
+	}
 }
 
-static void OnPacketSelected(void* object, std::shared_ptr<BasePacket>* pPacket)
+static void OnPacketSelected(void* object, BasePacket* pPacket)
 {
-	PostMessage((HWND)object, WM_INFO, 0, (LPARAM)pPacket);
+	if (pPacket != NULL)
+	{
+		PostMessage((HWND)object, WM_INFO, 0, (LPARAM)pPacket);
+	}
 }
 
 LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)

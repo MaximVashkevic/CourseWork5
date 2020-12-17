@@ -6,10 +6,24 @@
 #include <sstream>
 #include <iomanip>
 
-inline std::wstring GetMac(const PUINT8 pData);
+inline std::wstring GetMac(UINT8* pData)
+{
+    std::wstringstream s;
+
+    for (int i = 0; i < MAC_LENGTH; ++i)
+    {
+        s << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
+        if (i != MAC_LENGTH - 1)
+        {
+            s << L':';
+        }
+    }
+
+    return s.str();
+}
 
 class EthernetPacket :
-    public BasePacket
+    virtual public BasePacket
 {
 public:
     EthernetPacket(SIZE_T length, PUINT8 data)
@@ -33,7 +47,7 @@ private:
     std::wstring destination;
 
     // Inherited via BasePacket
-    virtual std::wstring Protocol() const override
+    std::wstring Protocol() const final
     {
         if (nextLayerData == nullptr)
         {
@@ -45,7 +59,7 @@ private:
         }
     }
 
-    virtual std::wstring Source() const override {
+    std::wstring Source() const final {
         if (nextLayerData == nullptr)
         {
             return source;
@@ -56,7 +70,7 @@ private:
         }
     }
 
-    virtual std::wstring Destination() const override
+    std::wstring Destination() const final
     {
         if (nextLayerData == nullptr)
         {
@@ -68,26 +82,10 @@ private:
         }
     }
 
-    virtual SIZE_T Length() const final
+    SIZE_T Length() const final
     {
         return length;
     }
 
 };
-
-std::wstring GetMac(const PUINT8 pData)
-{
-    std::wstringstream s;
-
-    for (int i = 0; i < MAC_LENGTH; ++i)
-    {
-        s << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
-        if (i != MAC_LENGTH - 1)
-        {
-            s << L':';
-        }
-    }
-
-    return s.str();
-}
 
