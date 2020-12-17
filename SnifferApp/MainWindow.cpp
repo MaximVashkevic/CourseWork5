@@ -31,6 +31,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 	case WM_DESTROY:
 	{
+		DestroyWindow(hPacketInfo);
+		DestroyWindow(hPacketList);
 		PostQuitMessage(0);
 		break;
 	}
@@ -61,7 +63,8 @@ void MainWindow::HandleCreate()
 	SetupPacketInfo();
 	HFONT hFont = CreateFont(0, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
 		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, FIXED_PITCH, L"Consolas");
-	SendMessage(hwnd, WM_SETFONT, (WPARAM)hFont, TRUE);
+	SendMessage(hPacketInfo, WM_SETFONT, (WPARAM)hFont, TRUE);
+	DeleteObject(hFont);
 	DeleteObject(hFont);
 	provider.SetOnCapture(hwnd, OnPacketCaptured);
 	provider.SetOnSelect(hwnd, OnPacketSelected);
