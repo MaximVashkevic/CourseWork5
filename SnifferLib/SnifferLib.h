@@ -29,9 +29,9 @@ static const GUID IP_FILTER_GUID =
 #define SNIFFER_DEVICE_NAME L"Sniffer"
 #define DEVICE_NAME  L"\\\\.\\"  SNIFFER_DEVICE_NAME
 
-extern "C"  HANDLE StartSniffing();
+extern "C" HANDLE StartSniffing();
 
-extern "C"  ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength);
+extern "C" ULONG GetPacket(HANDLE handle, PUCHAR buffer, ULONG bufferLength);
 
 extern "C" void StopSniffing(HANDLE handle);
 

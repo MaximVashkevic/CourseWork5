@@ -174,12 +174,14 @@ void ProcessReadRequest(P_FILE_OBJECT_CONTEXT objectContext)
 		{
 			status = STATUS_BUFFER_TOO_SMALL;
 			InsertHeadList(&objectContext->RecvNetBufListQueue, pReceiveNetBufferListEntry);
+			(objectContext->RecvNetBufListCount)++;
 		}
 		else
 		{
 			RtlCopyMemory(pDst, pPacketData, pPacket->length);
 			copiedLength = pPacket->length;
 			status = STATUS_SUCCESS;
+			SnifferFree(pReceiveNetBufferListEntry);
 		}
 
 
@@ -281,6 +283,7 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 	P_FILE_OBJECT_CONTEXT fileObjectContext;
 	KLOCK_QUEUE_HANDLE	lockHandle;
 	PNET_BUFFER_LIST rawData;
+	BOOL captured = FALSE;
 
 	UCHAR buffer[14];
 	UCHAR* header;
@@ -337,6 +340,7 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 							&(fileObjectContext->RecvNetBufListQueue),
 							pEntry);
 						(fileObjectContext->RecvNetBufListCount)++;
+						captured = TRUE;
 						// enqueue
 					}
 				}
@@ -347,8 +351,11 @@ VOID ClassifyFn(IN const FWPS_INCOMING_VALUES0* inFixedValues, IN const FWPS_INC
 	// TODO: replace?
 	KeReleaseInStackQueuedSpinLock(&lockHandle);
 
-	// TODO: где вызывать?
-	ProcessReadRequest(fileObjectContext);
+	if (captured)
+	{
+		// TODO: где вызывать?
+		ProcessReadRequest(fileObjectContext);
+	}
 
 	classifyOut->actionType = FWP_ACTION_CONTINUE;
 }

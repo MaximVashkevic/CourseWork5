@@ -1,0 +1,6 @@
+LIBRARY
+
+EXPORTS
+	GetPacketManaged
+	StartSniffing
+	StopSniffing
