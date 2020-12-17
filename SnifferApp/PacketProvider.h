@@ -35,9 +35,12 @@ public:
 			if (!capturing)
 			{
 				captureHandle = StartSniffing();
-				capturing = true;
-				HANDLE threadHandle = CreateThread(nullptr, 0, CaptureLoop, this, 0, nullptr);
-				CloseHandle(threadHandle);
+				if (captureHandle)
+				{
+					capturing = true;
+					HANDLE threadHandle = CreateThread(nullptr, 0, CaptureLoop, this, 0, nullptr);
+					CloseHandle(threadHandle);
+				}
 			}
 			LeaveCriticalSection(&criticalSection);
 		}
