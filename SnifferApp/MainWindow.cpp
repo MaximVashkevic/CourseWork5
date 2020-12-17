@@ -104,6 +104,21 @@ void MainWindow::HandleCommand(WPARAM wParam)
 		provider.StopCapture();
 		break;
 	}
+	case PACKET_LIST_ID:
+	{
+		if (HIWORD(wParam) == LBN_SELCHANGE)
+		{
+			if (hPacketList != nullptr)
+			{
+				auto index = SendMessage(hPacketList, LB_GETCURSEL, 0, 0);
+				if (index != LB_ERR)
+				{
+					provider.SelectPacket(index);
+				}
+			}
+		}
+		break;
+	}
 	}
 }
 
