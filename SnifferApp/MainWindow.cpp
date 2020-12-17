@@ -130,11 +130,16 @@ void MainWindow::HandlePacket(BasePacket* packet)
 		<< " : " << packet->Length() << L" : " << packet->Protocol();
 
 	if (hPacketList != nullptr)
+	{
 		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(s.str().c_str()));
+	}
 }
 
 void MainWindow::HandleInfo(BasePacket* packet)
 {
 	if (hPacketInfo != nullptr)
-		SendMessage(hPacketInfo, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(packet->Bytes().c_str()));
+	{
+		std::wstring s = packet->Bytes();
+		SendMessage(hPacketInfo, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(s.c_str()));
+	}
 }

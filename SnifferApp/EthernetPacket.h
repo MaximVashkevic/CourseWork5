@@ -108,7 +108,7 @@ private:
             {
                 s << std::setfill(L'0') << std::setw(4) << std::hex << i << L':';
             }
-            s << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
+            s << L' ' << std::setfill(L'0') << std::setw(2) << std::hex << pData[i];
         }
 
         return s.str();
