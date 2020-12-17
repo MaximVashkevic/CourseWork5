@@ -93,7 +93,7 @@ private:
         return length;
     }
 
-    std::wstring Bytes() const
+    std::wstring Bytes() const final
     {
         std::wstringstream s;
 

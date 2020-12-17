@@ -118,6 +118,6 @@ void MainWindow::HandlePacket(BasePacket* packet)
 
 void MainWindow::HandleInfo(BasePacket* packet)
 {
-	if (hPacketList != nullptr)
-		SendMessage(hPacketList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(packet->Bytes().c_str()));
+	if (hPacketInfo != nullptr)
+		SendMessage(hPacketInfo, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(packet->Bytes().c_str()));
 }
